@@ -91,8 +91,6 @@ class HuggingFaceLLM(LLM):
             **kwargs
         )
         response = self._tokenizer.decode(outputs[0], skip_special_tokens=True)
-        # The response from some models includes the prompt, so we remove it.
-        response = response[len(prompt):]
         self._logger.info(f"Generated response of length {len(response)}")
         return response
 
