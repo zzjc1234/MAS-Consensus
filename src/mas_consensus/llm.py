@@ -42,7 +42,14 @@ class HuggingFaceLLM(LLM):
                 bnb_4bit_compute_dtype=torch.float16,
             )
 
-        self._model = AutoModelForCausalLM.from_pretrained(
+        if self.model_type == "causal":
+            model_class = AutoModelForCausalLM
+        elif self.model_type == "seq2seq":
+            model_class = AutoModelForSeq2SeqLM
+        else:
+            raise ValueError(f"Unsupported model type: {self.model_type}")
+
+        self._model = model_class.from_pretrained(
             self.model,
             quantization_config=quantization_config,
             device_map="auto",

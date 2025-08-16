@@ -33,6 +33,7 @@ def main():
     parser.add_argument("--download_url", type=str, default="https://openreview.net/pdf?id=LuCLf4BJsr", help="URL to download the file from.")
     parser.add_argument("--query", type=str, default="List all the datasets used in the paper.", help="Query for the QA task.")
     parser.add_argument("--model", type=str, default="NousResearch/Meta-Llama-3.1-8B-Instruct", help="Hugging Face model to use.")
+    parser.add_argument("--instruction_format", type=str, default="llama", help="Instruction format for the model.")
     parser.add_argument("--max_tokens_per_chunk", type=int, default=4096, help="Max tokens per chunk.")
     parser.add_argument("--processing_modes", nargs='+', default=['left_to_right'], help="List of processing modes to run.")
 
@@ -45,6 +46,7 @@ def main():
         max_tokens_response=1024,
         context_window=16384,
         instruction_format=args.instruction_format,
+        model_type=args.model_type,
     )
 
     text = extract_text(args.file_path)

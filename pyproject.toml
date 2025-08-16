@@ -15,7 +15,7 @@ classifiers = [
 dependencies = [
     "phidata",
     "transformers",
-    "numpy",
+    "numpy<2.0",
     "scikit-learn",
     "pymupdf",
     "nest-asyncio",
