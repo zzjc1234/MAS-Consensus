@@ -144,7 +144,14 @@ def main():
             mode = ProcessingMode[mode_str.upper()]
         else:
             # Try to match by value
-            mode = next((m for m in ProcessingMode if m.value == mode_str.lower().replace("-", "_")), ProcessingMode.LTR)
+            mode = next(
+                (
+                    m
+                    for m in ProcessingMode
+                    if m.value == mode_str.lower().replace("-", "_")
+                ),
+                ProcessingMode.LTR,
+            )
         logger.info(f"Processing with {mode.value} mode")
         config.processing_mode = mode
         coa = ChainOfAgents(llm, initial_chunks, config, task_type)

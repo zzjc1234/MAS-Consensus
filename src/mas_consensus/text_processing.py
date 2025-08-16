@@ -57,7 +57,7 @@ def extract_text_with_pymupdf(pdf_path: str) -> str:
                     else:
                         # Tuple format: text is at index 4
                         text = block[4].strip() if len(block) > 4 and block[4] else ""
-                    
+
                     if not text:
                         continue
 
