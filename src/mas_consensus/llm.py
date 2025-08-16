@@ -84,7 +84,7 @@ class HuggingFaceLLM(LLM):
         Note: This implementation is synchronous.
         """
         self._logger.info(f"Generating completion for prompt of length {len(prompt)}")
-        inputs = self._tokenizer(prompt, return_tensors="pt").to(self._model.device)
+        inputs = self._tokenizer(prompt, return_tensors="pt", truncation=True, max_length=self.context_window).to(self._model.device)
         outputs = self._model.generate(
             **inputs,
             max_new_tokens=self.max_tokens_response,
