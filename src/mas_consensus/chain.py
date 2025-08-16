@@ -183,5 +183,6 @@ class ChainOfAgents:
             token_count=len(self.llm.tokenizer.encode(right_text))
         )
 
+        self.logger.info(f"Split chunk {chunk.chunk_id} into {left_chunk.chunk_id} and {right_chunk.chunk_id}")
         summary = self._process_chunk_recursively(left_chunk, current_summary, query)
         return self._process_chunk_recursively(right_chunk, summary, query)

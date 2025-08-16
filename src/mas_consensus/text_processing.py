@@ -57,6 +57,7 @@ def extract_text_with_pymupdf(pdf_path: str) -> str:
     except Exception as e:
         raise ValueError(f"Error processing PDF file: {str(e)}")
 
+    logger.info(f"Finished extracting text from PDF. Total lines: {len(full_text)}")
     return "\n".join(full_text)
 
 

@@ -80,6 +80,7 @@ class HuggingFaceLLM(LLM):
         Completes the prompt using the loaded Hugging Face model.
         Note: This implementation is synchronous.
         """
+        self.logger.info(f"Generating completion for prompt of length {len(prompt)}")
         inputs = self._tokenizer(prompt, return_tensors="pt").to(self._model.device)
         outputs = self._model.generate(
             **inputs,
@@ -88,7 +89,9 @@ class HuggingFaceLLM(LLM):
         )
         response = self._tokenizer.decode(outputs[0], skip_special_tokens=True)
         # The response from some models includes the prompt, so we remove it.
-        return response[len(prompt):]
+        response = response[len(prompt):]
+        self.logger.info(f"Generated response of length {len(response)}")
+        return response
 
     @property
     def tokenizer(self):

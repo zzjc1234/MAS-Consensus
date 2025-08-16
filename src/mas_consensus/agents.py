@@ -74,6 +74,7 @@ class ManagerAgent(Assistant):
 
         prompt = self.llm.format_prompt(formatted_instruction)
 
-        print("\n=== Manager Agent Processing ===")
+        self.logger.info("Manager Agent processing...")
         response = self.llm.complete(prompt)
+        self.logger.info(f"Manager response length: {len(response)}")
         return self.remove_answer_tags(response, task_type)
