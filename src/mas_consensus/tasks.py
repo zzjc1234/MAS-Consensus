@@ -4,6 +4,7 @@ from .config import TaskConfig
 
 class TaskType(Enum):
     """Enum for the type of task."""
+
     QA = "qa"
     SUMMARIZATION = "summarization"
 
@@ -61,7 +62,7 @@ class TaskFactory:
                 [TASK]
                 Integrate all informations from every summary, resolve contradictions, and provide a comprehensive answer.
                 Answer format: <answer>[Combined response using all relevant facts]</answer>
-                """
+                """,
             )
         elif task_type == TaskType.SUMMARIZATION:
             return TaskConfig(
@@ -94,5 +95,5 @@ class TaskFactory:
                 [TASK]
                 Integrate all information from the summaries into a single coherent summary.
                 Resolve any contradictions and ensure the logical flow of ideas.
-                """
+                """,
             )

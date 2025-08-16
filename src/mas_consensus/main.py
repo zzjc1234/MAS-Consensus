@@ -1,3 +1,18 @@
+"""
+Main module for the MAS Consensus system.
+
+This module implements a multi-agent system for consensus-based text processing.
+It orchestrates a chain of worker agents to analyze text chunks and a manager
+agent to synthesize the final response. The system supports both question
+answering and summarization tasks.
+
+Example usage:
+    mas_consensus --model google/flan-t5-small --model_type seq2seq --instruction_format t5 --file_path paper.pdf --task qa --query "What is the main contribution of the paper?"
+
+For users in China or those experiencing network issues with Hugging Face:
+    HF_ENDPOINT=https://hf-mirror.com mas_consensus [OPTIONS]
+"""
+
 import argparse
 import gc
 import logging
@@ -69,13 +84,13 @@ def main():
     parser.add_argument(
         "--model",
         type=str,
-        default="NousResearch/Meta-Llama-3.1-8B-Instruct",
+        default="microsoft/phi-2",
         help="Hugging Face model to use.",
     )
     parser.add_argument(
         "--instruction_format",
         type=str,
-        default="llama",
+        default="phi",
         help="Instruction format for the model.",
     )
     parser.add_argument(
@@ -122,8 +137,14 @@ def main():
     logger.info(f"Created {len(initial_chunks)} chunks")
 
     final_summaries = []
+    coa = None  # Initialize coa to prevent unbound variable error
     for mode_str in args.processing_modes:
-        mode = ProcessingMode(mode_str.lower().replace("-", "_"))
+        # Convert string to ProcessingMode enum
+        if mode_str.upper() in ProcessingMode.__members__:
+            mode = ProcessingMode[mode_str.upper()]
+        else:
+            # Try to match by value
+            mode = next((m for m in ProcessingMode if m.value == mode_str.lower().replace("-", "_")), ProcessingMode.LTR)
         logger.info(f"Processing with {mode.value} mode")
         config.processing_mode = mode
         coa = ChainOfAgents(llm, initial_chunks, config, task_type)
@@ -141,14 +162,18 @@ def main():
         final_response = manager.generate_response(
             summary=combined_summaries,
             query=args.query if task_type == TaskType.QA else None,
-            instruction=coa.task_config.multi_summary_instruction,
+            instruction=(
+                coa.task_config.multi_summary_instruction if coa else ""
+            ),  # Handle potential None coa
             task_type=task_type,
         )
     else:
         final_response = manager.generate_response(
-            summary=final_summaries[0],
+            summary=final_summaries[0] if final_summaries else "",
             query=args.query if task_type == TaskType.QA else None,
-            instruction=coa.task_config.manager_instruction,
+            instruction=(
+                coa.task_config.manager_instruction if coa else ""
+            ),  # Handle potential None coa
             task_type=task_type,
         )
 

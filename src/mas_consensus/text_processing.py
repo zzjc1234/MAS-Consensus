@@ -4,12 +4,12 @@ from typing import List
 
 import fitz
 
-SENTENCE_SPLIT_PATTERN = re.compile(r'(?<=[.!?])\s+')
+SENTENCE_SPLIT_PATTERN = re.compile(r"(?<=[.!?])\s+")
 
 
 def read_text_file(file_path: str) -> str:
     """Reads a text file and returns its content."""
-    with open(file_path, 'r', encoding='utf-8') as f:
+    with open(file_path, "r", encoding="utf-8") as f:
         return f.read()
 
 
@@ -19,11 +19,13 @@ def extract_text_with_pymupdf(pdf_path: str) -> str:
     """
     logger = logging.getLogger(__name__)
     logger.info(f"Extracting text from PDF: {pdf_path}")
-    references_pattern = re.compile(r'^references?$|^bibliography$')
-    citation_pattern = re.compile(r'^\\[\\d+\\]|\\d+\\.^|^[A-Z][a-z]+, *[A-Z]\\.|^\\s*[A-Z][a-z]+\\s+[A-Z][a-z]+')
-    number_pattern = re.compile(r'^\\[\\d+\\]$|^\\d+\\.')
-    year_pattern = re.compile(r'^.*?\\(\\d{4}\\)[.,].*?$')
-    whitespace_pattern = re.compile(r'\\s+')
+    references_pattern = re.compile(r"^references?$|^bibliography$")
+    citation_pattern = re.compile(
+        r"^\\[\\d+\\]|\\d+\\.^|^[A-Z][a-z]+, *[A-Z]\\.|^\\s*[A-Z][a-z]+\\s+[A-Z][a-z]+"
+    )
+    number_pattern = re.compile(r"^\\[\\d+\\]$|^\\d+\\.")
+    year_pattern = re.compile(r"^.*?\\(\\d{4}\\)[.,].*?$")
+    whitespace_pattern = re.compile(r"\\s+")
 
     full_text: List[str] = []
     in_references = False
@@ -31,11 +33,31 @@ def extract_text_with_pymupdf(pdf_path: str) -> str:
     try:
         with fitz.open(pdf_path) as doc:
             for page in doc:
-                blocks = page.get_text("blocks")
-                blocks.sort(key=lambda b: (b[1], b[0]))
+                # Safely get text blocks
+                try:
+                    blocks = page.get_text("dict")["blocks"]  # type: ignore
+                    # For dict format, sort by bbox y-coordinate then x-coordinate
+                    blocks.sort(key=lambda b: (b["bbox"][1], b["bbox"][0]))
+                except Exception:
+                    try:
+                        blocks = page.get_text("blocks")  # type: ignore # Fallback method
+                        # For blocks format, sort by y-coordinate then x-coordinate (indices 1 and 0)
+                        blocks.sort(key=lambda b: (b[1], b[0]))
+                    except Exception:
+                        blocks = []  # If both methods fail, use empty list
 
                 for block in blocks:
-                    text = block[4].strip() if block[4] else ''
+                    # Handle both dict and tuple formats
+                    if isinstance(block, dict):
+                        # Dict format: extract text from lines and spans
+                        text = ""
+                        for line in block.get("lines", []):
+                            for span in line.get("spans", []):
+                                text += span.get("text", "")
+                    else:
+                        # Tuple format: text is at index 4
+                        text = block[4].strip() if len(block) > 4 and block[4] else ""
+                    
                     if not text:
                         continue
 
@@ -52,7 +74,7 @@ def extract_text_with_pymupdf(pdf_path: str) -> str:
                     if year_pattern.match(text) and len(text.split()) < 20:
                         continue
 
-                    text = whitespace_pattern.sub(' ', text)
+                    text = whitespace_pattern.sub(" ", text)
                     if text.isupper() or len(text) <= 3:
                         full_text.append(f"\n## {text}\n")
                     else:
@@ -69,9 +91,9 @@ def extract_text(file_path: str) -> str:
     """
     Extracts text from a file, supporting .txt and .pdf formats.
     """
-    if file_path.lower().endswith('.txt'):
+    if file_path.lower().endswith(".txt"):
         return read_text_file(file_path)
-    elif file_path.lower().endswith('.pdf'):
+    elif file_path.lower().endswith(".pdf"):
         return extract_text_with_pymupdf(file_path)
     else:
         raise ValueError(f"Unsupported file format. File must be either .pdf or .txt")

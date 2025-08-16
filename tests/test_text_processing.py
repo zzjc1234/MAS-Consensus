@@ -26,5 +26,5 @@ class TestTextProcessing(unittest.TestCase):
             extract_text("test.unsupported")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
