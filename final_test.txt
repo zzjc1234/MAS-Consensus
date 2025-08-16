@@ -1,1 +1,0 @@
-MAS Consensus system is working with proper type checking.
