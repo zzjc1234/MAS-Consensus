@@ -34,6 +34,7 @@ def main():
     parser.add_argument("--query", type=str, default="List all the datasets used in the paper.", help="Query for the QA task.")
     parser.add_argument("--model", type=str, default="NousResearch/Meta-Llama-3.1-8B-Instruct", help="Hugging Face model to use.")
     parser.add_argument("--instruction_format", type=str, default="llama", help="Instruction format for the model.")
+    parser.add_argument("--model_type", type=str, default="causal", help="Type of the model, either 'causal' or 'seq2seq'.")
     parser.add_argument("--max_tokens_per_chunk", type=int, default=4096, help="Max tokens per chunk.")
     parser.add_argument("--processing_modes", nargs='+', default=['left_to_right'], help="List of processing modes to run.")
 

@@ -1,7 +1,7 @@
 import torch
 from phi.llm.base import LLM
 from pydantic import Field, PrivateAttr
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from transformers import AutoModelForCausalLM, AutoModelForSeq2SeqLM, AutoTokenizer, BitsAndBytesConfig
 
 
 class HuggingFaceLLM(LLM):
@@ -11,6 +11,10 @@ class HuggingFaceLLM(LLM):
     model: str = Field(
         default="NousResearch/Meta-Llama-3.1-8B-Instruct",
         description="The name/path of the model to use"
+    )
+    model_type: str = Field(
+        default="causal",
+        description="Type of the model, either 'causal' or 'seq2seq'."
     )
     max_tokens_response: int = Field(
         default=2048,
