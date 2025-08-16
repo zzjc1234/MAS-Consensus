@@ -1,0 +1,25 @@
+#!/bin/sh
+#
+# A git hook script to enforce python formatting and type checking.
+#
+# This script is designed to be used as a pre-commit hook.
+
+echo "Running pre-commit hook"
+
+# Check for formatting issues with black
+# --check exits with a non-zero status code if files would be formatted
+black --check .
+if [ $? -ne 0 ]; then
+    echo "Error: Python code is not formatted. Please run 'black .' to format it." >&2
+    exit 1
+fi
+
+# Check for type errors with pyright
+pyright
+if [ $? -ne 0 ]; then
+    echo "Error: Pyright found type errors. Please fix them before committing." >&2
+    exit 1
+fi
+
+echo "Pre-commit checks passed."
+exit 0

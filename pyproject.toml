@@ -1,11 +1,36 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
-name = "mas-consensus"
+name = "mas_consensus"
 version = "0.1.0"
-description = "Add your description here"
+description = "A multi-agent system for consensus-based text processing."
 readme = "README.md"
-requires-python = ">=3.10"
-dependencies = [
-    "phidata>=2.7.10",
-    "pymupdf>=1.26.3",
-    "transformers>=4.55.2",
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
 ]
+dependencies = [
+    "phidata",
+    "transformers",
+    "numpy",
+    "scikit-learn",
+    "pymupdf",
+    "nest-asyncio",
+    "requests",
+    "torch",
+    "accelerate",
+    "bitsandbytes",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "black",
+    "pyright",
+]
+
+[project.scripts]
+mas_consensus = "mas_consensus.main:main"
