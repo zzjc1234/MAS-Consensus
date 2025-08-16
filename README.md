@@ -83,6 +83,25 @@ To run the tests, use `pytest`:
 pytest
 ```
 
+The project includes comprehensive tests for all modules:
+- `test_agents.py`: Tests for worker and manager agents
+- `test_chain.py`: Tests for the chain of agents and chunk processing
+- `test_config.py`: Tests for configuration classes and enums
+- `test_llm.py`: Tests for the HuggingFace LLM wrapper
+- `test_main.py`: Tests for the main module functions
+- `test_tasks.py`: Tests for task configurations
+- `test_text_processing.py`: Tests for text extraction and processing
+
+## Baseline Implementation
+
+This repository contains a baseline implementation in the `src/baseline` directory. This is a snapshot of the original MAS Consensus implementation that serves as a reference point for future versions. The baseline is fully functional and can be run independently.
+
+To use the baseline implementation, you can directly run:
+
+```sh
+python -m baseline.main [OPTIONS]
+```
+
 ## Pre-commit Hooks
 
 This project uses pre-commit hooks to enforce code quality. To enable them, run the following command once after cloning the repository:
