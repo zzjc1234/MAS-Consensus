@@ -1,0 +1,11 @@
+[project]
+name = "mas-consensus"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "phidata>=2.7.10",
+    "pymupdf>=1.26.3",
+    "transformers>=4.55.2",
+]
