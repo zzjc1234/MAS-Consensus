@@ -44,6 +44,7 @@ def main():
         model=args.model,
         max_tokens_response=1024,
         context_window=16384,
+        instruction_format=args.instruction_format,
     )
 
     text = extract_text(args.file_path)

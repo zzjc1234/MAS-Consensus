@@ -59,7 +59,10 @@ class HuggingFaceLLM(LLM):
                 f"{instruction}"
                 f"<|eot_id|><|start_header_id|>assistant<|end_header_id|>"
             )
-        return f"<s>[INST]{instruction}[/INST]"
+        elif self.instruction_format.lower() == "mistral":
+            return f"<s>[INST]{instruction}[/INST]"
+        else:
+            return instruction
 
     def complete(self, prompt: str, **kwargs) -> str:
         """
