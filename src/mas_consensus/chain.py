@@ -1,4 +1,5 @@
 import random
+import logging
 from typing import List, Optional
 
 import numpy as np
@@ -10,10 +11,12 @@ from .config import ChainOfAgentsConfig, TextChunk, ProcessingMode
 from .agents import WorkerAgent
 from .tasks import TaskFactory, TaskType
 from .text_processing import SENTENCE_SPLIT_PATTERN
+from pydantic import PrivateAttr
 
 
 class ChunkProcessor:
     """Processes and splits text chunks."""
+    _logger: logging.Logger = PrivateAttr()
 
     def __init__(self, llm: HuggingFaceLLM, config: ChainOfAgentsConfig):
         self.llm = llm
@@ -21,6 +24,7 @@ class ChunkProcessor:
         self.vectorizer = TfidfVectorizer()
         self.mean_score: float = 0.0
         self.std_score: float = 0.0
+        self._logger = logging.getLogger(__name__)
 
     def calculate_entropy(self, text: str) -> float:
         """Calculates the Shannon entropy of the text."""
@@ -45,21 +49,25 @@ class ChunkProcessor:
     def _needs_split(self, chunk: TextChunk, query: Optional[str]) -> bool:
         """Determines if a chunk needs to be split."""
         if chunk.token_count < self.config.min_tokens_to_split:
+            self._logger.debug(f"Chunk {chunk.chunk_id} below min tokens to split.")
             return False
 
         score = self.calculate_priority_score(chunk, query) if query else self.calculate_entropy(chunk.text)
         distribution_factor = 1 - np.exp(-self.config.sensitivity_curve * self.std_score)
         dynamic_threshold = self.mean_score + (self.config.split_threshold * distribution_factor * self.std_score)
 
+        self._logger.info(f"Calculated priority score for chunk {chunk.chunk_id}: {score:.4f}")
         return score > dynamic_threshold
 
     def split_into_chunks(self, text: str) -> List[TextChunk]:
         """Splits a large text into smaller chunks."""
+        self._logger.info(f"Splitting text into chunks. Total tokens: {len(self.llm.tokenizer.encode(text))}")
         tokens = self.llm.tokenizer.encode(text)
         total_tokens = len(tokens)
         del tokens
 
         if total_tokens <= self.config.max_tokens_per_chunk:
+            self._logger.info("Text is smaller than max chunk size, not splitting.")
             return [TextChunk(text=text, chunk_id="0", token_count=total_tokens)]
 
         segments = text.split('\n')
@@ -99,6 +107,7 @@ class ChunkProcessor:
 
 class ChainOfAgents:
     """Orchestrates the chain of agents for processing text."""
+    _logger: logging.Logger = PrivateAttr()
 
     def __init__(
         self,
@@ -114,6 +123,7 @@ class ChainOfAgents:
         self.task_config = TaskFactory.create_task(task_type)
         self.chunk_processor = ChunkProcessor(llm, config)
         self.is_first_chunk = True
+        self._logger = logging.getLogger(__name__)
 
     def _get_chunk_order(self) -> List[TextChunk]:
         """Gets the order in which to process the chunks."""
@@ -137,14 +147,18 @@ class ChainOfAgents:
         self.chunk_processor.std_score = np.std(initial_scores) if initial_scores else 0.0
 
         ordered_chunks = self._get_chunk_order()
+        self._logger.info("Processing chunks.")
         for chunk in ordered_chunks:
             current_summary = self._process_chunk_recursively(chunk, current_summary, query)
 
+        self._logger.info("Finished processing all chunks.")
         return current_summary
 
     def _process_chunk_recursively(self, chunk: TextChunk, current_summary: str, query: Optional[str]) -> str:
         """Processes a chunk, splitting it recursively if necessary."""
+        self._logger.info(f"Processing chunk {chunk.chunk_id}")
         if not self.chunk_processor._needs_split(chunk, query):
+            self._logger.info(f"Chunk {chunk.chunk_id} does not need to be split. Processing as is.")
             worker = WorkerAgent(self.llm, chunk.chunk_id)
             instruction = self.task_config.first_worker_instruction if self.is_first_chunk else self.task_config.worker_instruction
             self.is_first_chunk = False
@@ -157,6 +171,7 @@ class ChainOfAgents:
 
         sentences = SENTENCE_SPLIT_PATTERN.split(chunk.text)
         if len(sentences) < 2:
+            self._logger.warning(f"Cannot split chunk {chunk.chunk_id} further, not enough sentences.")
             # Cannot split further, process as is
             worker = WorkerAgent(self.llm, chunk.chunk_id)
             instruction = self.task_config.first_worker_instruction if self.is_first_chunk else self.task_config.worker_instruction
@@ -183,6 +198,6 @@ class ChainOfAgents:
             token_count=len(self.llm.tokenizer.encode(right_text))
         )
 
-        self.logger.info(f"Split chunk {chunk.chunk_id} into {left_chunk.chunk_id} and {right_chunk.chunk_id}")
+        self._logger.info(f"Split chunk {chunk.chunk_id} into {left_chunk.chunk_id} and {right_chunk.chunk_id}")
         summary = self._process_chunk_recursively(left_chunk, current_summary, query)
         return self._process_chunk_recursively(right_chunk, summary, query)

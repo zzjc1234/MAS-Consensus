@@ -1,4 +1,5 @@
 import torch
+import logging
 from phi.llm.base import LLM
 from pydantic import Field, PrivateAttr
 from transformers import AutoModelForCausalLM, AutoModelForSeq2SeqLM, AutoTokenizer, BitsAndBytesConfig
@@ -35,6 +36,7 @@ class HuggingFaceLLM(LLM):
 
     _model: AutoModelForCausalLM = PrivateAttr()
     _tokenizer: AutoTokenizer = PrivateAttr()
+    _logger: logging.Logger = PrivateAttr()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -60,6 +62,7 @@ class HuggingFaceLLM(LLM):
             torch_dtype="auto"
         )
         self._tokenizer = AutoTokenizer.from_pretrained(self.model)
+        self._logger = logging.getLogger(__name__)
 
     def format_prompt(self, instruction: str) -> str:
         """Formats the prompt according to the specified instruction format."""
@@ -80,7 +83,7 @@ class HuggingFaceLLM(LLM):
         Completes the prompt using the loaded Hugging Face model.
         Note: This implementation is synchronous.
         """
-        self.logger.info(f"Generating completion for prompt of length {len(prompt)}")
+        self._logger.info(f"Generating completion for prompt of length {len(prompt)}")
         inputs = self._tokenizer(prompt, return_tensors="pt").to(self._model.device)
         outputs = self._model.generate(
             **inputs,
@@ -90,7 +93,7 @@ class HuggingFaceLLM(LLM):
         response = self._tokenizer.decode(outputs[0], skip_special_tokens=True)
         # The response from some models includes the prompt, so we remove it.
         response = response[len(prompt):]
-        self.logger.info(f"Generated response of length {len(response)}")
+        self._logger.info(f"Generated response of length {len(response)}")
         return response
 
     @property

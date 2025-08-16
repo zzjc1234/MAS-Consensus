@@ -1,4 +1,5 @@
 import re
+import logging
 from typing import List
 
 import fitz
@@ -16,11 +17,13 @@ def extract_text_with_pymupdf(pdf_path: str) -> str:
     """
     Extracts text from a PDF file using PyMuPDF, attempting to remove headers, footers, and citation markers.
     """
+    logger = logging.getLogger(__name__)
+    logger.info(f"Extracting text from PDF: {pdf_path}")
     references_pattern = re.compile(r'^references?$|^bibliography$')
-    citation_pattern = re.compile(r'^[\[\]\d+\]|\d+\.|^[A-Z][a-z]+, *[A-Z]\.|^\s*[A-Z][a-z]+\s+[A-Z][a-z]+')
-    number_pattern = re.compile(r'^[\[\]\d+\]$|^\d+\.$')
-    year_pattern = re.compile(r'^.*?\(\d{4}\)[.,].*?$')
-    whitespace_pattern = re.compile(r'\s+')
+    citation_pattern = re.compile(r'^\\[\\d+\\]|\\d+\\.^|^[A-Z][a-z]+, *[A-Z]\\.|^\\s*[A-Z][a-z]+\\s+[A-Z][a-z]+')
+    number_pattern = re.compile(r'^\\[\\d+\\]$|^\\d+\\.')
+    year_pattern = re.compile(r'^.*?\\(\\d{4}\\)[.,].*?$')
+    whitespace_pattern = re.compile(r'\\s+')
 
     full_text: List[str] = []
     in_references = False
@@ -55,6 +58,7 @@ def extract_text_with_pymupdf(pdf_path: str) -> str:
                     else:
                         full_text.append(text + "\n")
     except Exception as e:
+        logger.error(f"Error processing PDF file: {str(e)}")
         raise ValueError(f"Error processing PDF file: {str(e)}")
 
     logger.info(f"Finished extracting text from PDF. Total lines: {len(full_text)}")
@@ -70,4 +74,4 @@ def extract_text(file_path: str) -> str:
     elif file_path.lower().endswith('.pdf'):
         return extract_text_with_pymupdf(file_path)
     else:
-        raise ValueError("Unsupported file format. File must be either .pdf or .txt")
+        raise ValueError(f"Unsupported file format. File must be either .pdf or .txt")
