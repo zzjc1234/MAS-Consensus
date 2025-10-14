@@ -173,3 +173,6 @@ cython_debug/
 .aider*
 GEMINI.md
 paper.pdf
+*.zip
+*.tar
+*.gz

@@ -84,6 +84,7 @@ pytest
 ```
 
 The project includes comprehensive tests for all modules:
+
 - `test_agents.py`: Tests for worker and manager agents
 - `test_chain.py`: Tests for the chain of agents and chunk processing
 - `test_config.py`: Tests for configuration classes and enums
