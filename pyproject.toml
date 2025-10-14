@@ -1,10 +1,11 @@
 [project]
-name = "mas-consensus-wkx"
+name = "Agent-Consensus"
 version = "0.1.0"
-description = "Add your description here"
+description = "Agent consensus paper"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "datasets>=4.2.0",
     "networkx[default]>=3.4.2",
     "numpy==1.26.4",
     "openai>=2.3.0",
