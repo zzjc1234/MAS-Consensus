@@ -5,7 +5,7 @@ from openai import OpenAI
 
 
 def get_client(openai_api_key=os.environ["OPENAI_API_KEY"]):
-    client = OpenAI(api_key=openai_api_key)
+    client = OpenAI(base_url="http://35.220.164.252:3888/v1/", api_key=openai_api_key)
     return client
 
 

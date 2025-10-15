@@ -176,3 +176,6 @@ paper.pdf
 *.zip
 *.tar
 *.gz
+notion.md
+.qwen
+**/output/

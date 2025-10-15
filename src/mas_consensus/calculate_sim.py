@@ -1,18 +1,3 @@
-# from scipy.stats import kendalltau
-#
-# ranking1 = {}
-# ranking2 = {}
-# ranking1["fact"] = [1, 3, 4, 5, 2]
-# ranking1["csqa"] = [1, 2, 4, 5, 3]
-# ranking1["gsm8k"] = [4, 3, 5, 2, 1]
-#
-# ranking2["ne"] = [5, 3, 4, 2, 1]
-# ranking2["ec"] = [[5, 3, 2, 1, 4], [5, 4, 2, 1, 3]]
-# ranking2["apv"] = [[5, 3, 1, 2, 4], [4, 3, 1, 2, 5]]
-# tau, p_value = kendalltau(ranking1, ranking2)
-#
-# print(f"Kendall's Tau: {tau}")
-# print(f"P-value: {p_value}")
 import numpy as np
 from scipy.stats import kendalltau
 

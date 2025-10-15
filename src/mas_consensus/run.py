@@ -1,8 +1,8 @@
-import run_adv
-import run_bias
-import run_csqa
-import run_fact
-import run_gsm8k
+from . import run_adv
+from . import run_bias
+from . import run_csqa
+from . import run_fact
+from . import run_gsm8k
 
 if __name__ == "__main__":
     datasets = ["bias"]
