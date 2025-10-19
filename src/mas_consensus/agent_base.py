@@ -184,6 +184,8 @@ class AgentGraph:
         task_id,
         agent_class,
         model_type="gpt-3.5-turbo",
+        num_auditors=0,
+        attacker_idx=None,
     ):
         assert len(system_prompts) == num_agents
         assert len(adj_matrix) == num_agents
@@ -201,7 +203,19 @@ class AgentGraph:
             )
             for i in range(num_agents)
         ]
-        self.record = {"task_id": task_id}
+        self.record = {"task_id": task_id, "audit_results": []}
+        self.num_auditors = num_auditors
+        self.attacker_idx = attacker_idx if attacker_idx is not None else []
+        from . import defense, prompts
+
+        self.auditor_agents = [
+            defense.AuditorAgent(
+                i,
+                prompts.discussion_prompt["auditor_system_prompt"],
+                model_type,
+            )
+            for i in range(num_auditors)
+        ]
 
     def run(self, turns):
         # First generate
@@ -216,7 +230,7 @@ class AgentGraph:
             thread.join()
 
         # Re-generate for given number of turns
-        for _ in range(turns):
+        for turn_num in range(turns):
             threads = []
             for i, agent in enumerate(self.agents):
                 neighbors = [
@@ -235,6 +249,37 @@ class AgentGraph:
                 thread.start()
             for thread in threads:
                 thread.join()
+
+            # Audit step
+            if self.num_auditors > 0:
+                audit_threads = []
+                agents_to_audit = random.sample(
+                    self.agents, k=min(len(self.agents), 3)
+                )  # Audit up to 3 agents
+                for agent_to_audit in agents_to_audit:
+                    auditor = random.choice(self.auditor_agents)
+                    thread = threading.Thread(
+                        target=self._run_audit, args=(auditor, agent_to_audit, turn_num)
+                    )
+                    audit_threads.append(thread)
+                    thread.start()
+                for thread in audit_threads:
+                    thread.join()
+
+    def _run_audit(self, auditor, agent_to_audit, turn_num):
+        auditor.audit(agent_to_audit, self.tasks[agent_to_audit.idx])
+        judgement = auditor.last_response.get("judgement")
+        audit_record = {
+            "turn": turn_num,
+            "auditor_id": auditor.idx,
+            "audited_agent_id": agent_to_audit.idx,
+            "judgement": judgement,
+        }
+        self.record["audit_results"].append(audit_record)
+        if judgement is False:
+            print(
+                f"Audit failed: Auditor {auditor.idx} flagged Agent {agent_to_audit.idx} at turn {turn_num}"
+            )
 
     def save(self, output_path, format):
         for i, agent in enumerate(self.agents):

@@ -20,6 +20,7 @@ def _process_item(
     sample_id,
     agent_class,
     task_formatter,
+    num_auditors,
 ):
     tasks, task_id = task_formatter(data, attacker_idx, num_agents)
 
@@ -29,7 +30,15 @@ def _process_item(
     ]
 
     graph = agent_base.AgentGraph(
-        num_agents, adj_matrix, system_prompts, tasks, task_id, agent_class, model
+        num_agents,
+        adj_matrix,
+        system_prompts,
+        tasks,
+        task_id,
+        agent_class,
+        model,
+        num_auditors=num_auditors,
+        attacker_idx=attacker_idx,
     )
     graph.run(turn)
     output_path = f"./output/{model}/{ds_name}/{sample_id}/{ds_name}_{mode}.output"
@@ -48,6 +57,7 @@ def run_dataset(
     turn,
     agent_class,
     task_formatter,
+    num_auditors=0,
 ):
     adj_matrix = methods.generate_adj(num_agents, graph_type)
     mode = f"{graph_type}_{num_agents}_{len(attacker_idx)}"
@@ -83,6 +93,7 @@ def run_dataset(
                 sample_id,
                 agent_class,
                 task_formatter,
+                num_auditors,
             ),
         )
         threads.append(thread)
