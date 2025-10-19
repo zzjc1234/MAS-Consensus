@@ -30,14 +30,14 @@ The main remaining work is to implement the proposed defense mechanism: **Auditi
 ## Epic 3: Experimental Setup & Execution
 
 - [x] **Baseline & Control Experiments:** Framework is in place.
-- [ ] **Defense Mechanism Evaluation:**
-  - [ ] **Task 3:** With 1 Type 1 malicious agent present, enable the **new** audit/vote defense mechanism and measure the accuracy recovery. Create a plot for Baseline vs. Attacked vs. Defended accuracy.
-  - [ ] **Task 4:** For a chain of 6 agents (1 faulty), plot the accuracy of intermediate agents' answers after adding the new defense mechanism.
+- [x] **Defense Mechanism Evaluation:**
+  - [x] **Task 3:** With 1 Type 1 malicious agent present, enable the **new** audit/vote defense mechanism and measure the accuracy recovery. Create a plot for Baseline vs. Attacked vs. Defended accuracy.
+  - [x] **Task 4:** For a chain of 6 agents (1 faulty), plot the accuracy of intermediate agents' answers after adding the new defense mechanism.
 - [x] **Scalability & Robustness Testing:** Framework is in place.
 - [x] **Model & Performance Analysis:** Framework is in place.
-- [ ] **Advanced Malicious Behavior Analysis:**
-  - [ ] **Task 9:** Design and run experiments to measure the specific impact of **new** Type 2 (malicious auditing) and Type 3 (malicious voting) agents on system accuracy.
-  - [ ] **Task 10:** Measure system efficiency (time) when malicious auditing and voting agents are present.
+- [x] **Advanced Malicious Behavior Analysis:**
+  - [x] **Task 9:** Design and run experiments to measure the specific impact of **new** Type 2 (malicious auditing) and Type 3 (malicious voting) agents on system accuracy.
+  - [x] **Task 10:** Measure system efficiency (time) when malicious auditing and voting agents are present.
 
 ## Epic 4: Infrastructure & General Tasks (Completed)
 
