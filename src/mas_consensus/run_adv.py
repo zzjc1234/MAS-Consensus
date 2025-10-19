@@ -1,11 +1,16 @@
-import random
-import threading
+from . import util
+from . import agent_base
 
-from .agent_base import create_discussion_agent_graph, run_adv_dataset
 
-random.seed(42)
-write_lock = threading.Lock()  # Lock for thread-safe file writing
-assignment_lock = threading.Lock()  # Lock for thread-safe variable assignment
+def task_formatter(data, attacker_idx, num_agents):
+    prompt = data["prompt"]
+    task_id = data["task_id"]
+
+    task = "Task: Engage in a multi-agent discussion."
+    attacker_task = f"Task: {prompt}"
+
+    tasks = [attacker_task if i in attacker_idx else task for i in range(num_agents)]
+    return tasks, task_id
 
 
 def run_dataset(
@@ -19,8 +24,7 @@ def run_dataset(
     json_format,
     turn,
 ):
-    # Use the specialized function for adversarial datasets
-    run_adv_dataset(
+    util.run_dataset(
         ds_name,
         sample_id,
         attacker_idx,
@@ -30,5 +34,33 @@ def run_dataset(
         num_agents,
         json_format,
         turn,
-        create_discussion_agent_graph,  # Pass the factory function
+        agent_class=agent_base.SimpleAgent,
+        task_formatter=task_formatter,
     )
+
+
+if __name__ == "__main__":
+    dataset = "adv"
+    sample_ids = [3]
+    graph_type = "complete"
+    model = "gpt-3.5-turbo"
+    json_format = False
+    p = 8
+    reg_turn = 9
+    num_agents = 6
+    attacker_nums = [num_agents - 1]
+    for sample_id in sample_ids:
+        for attacker_num in attacker_nums:
+            attacker_idx = list(range(attacker_num))
+            print("Attacker Idx:", attacker_idx)
+            run_dataset(
+                dataset,
+                sample_id,
+                attacker_idx,
+                graph_type,
+                model,
+                p,
+                num_agents,
+                json_format,
+                reg_turn,
+            )
