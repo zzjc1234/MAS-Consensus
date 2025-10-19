@@ -14,3 +14,9 @@ dependencies = [
     "seaborn>=0.13.2",
     "tqdm>=4.67.1",
 ]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.6.9",
+    "pre-commit>=3.8.0",
+]
