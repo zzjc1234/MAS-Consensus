@@ -4,30 +4,29 @@ This document breaks down the project plan into actionable development tasks. Th
 
 The main remaining work is to implement the proposed defense mechanism: **Auditing and Voting**.
 
-## Epic 1: Core Defense Mechanism Implementation (Remaining Work)
+## Epic 1: Core Defense Mechanism Implementation (Completed)
 
-- [ ] **Auditing Mechanism:**
-    - [ ] Create a dedicated audit expert group or enable agents to audit each other.
-    - [ ] After a task step, randomly select agents to perform an audit.
-    - [ ] Implement the logic for auditors to receive the inputs/outputs of the audited agent and provide a T/F judgment on the result's reasonableness.
-- [ ] **System-wide Voting:**
-    - [ ] Implement a trigger for a system-wide vote when an audit fails (returns 'F').
-    - [ ] Implement the mechanism to share the audited agent's data with all voting agents.
-    - [ ] Implement the voting logic to identify and confirm a malicious agent.
-- [ ] **Task Reassignment / Correction:**
-    - [ ] Implement the logic to handle a confirmed malicious agent.
+- [x] **Auditing Mechanism:**
+    - [x] Create a dedicated audit expert group or enable agents to audit each other.
+    - [x] After a task step, randomly select agents to perform an audit.
+    - [x] Implement the logic for auditors to receive the inputs/outputs of the audited agent and provide a T/F judgment on the result's reasonableness.
+- [x] **System-wide Voting:**
+    - [x] Implement a trigger for a system-wide vote when an audit fails (returns 'F').
+    - [x] Implement the mechanism to share the audited agent's data with all voting agents.
+    - [x] Implement the voting logic to identify and confirm a malicious agent.
+- [x] **Task Reassignment / Correction:**
     - [ ] Strategy 1: Reassign the malicious agent's task to an honest agent.
-    - [ ] Strategy 2: Replace the malicious agent's prompt with a normal one and have it retry the task.
+    - [x] Strategy 2: Replace the malicious agent's prompt with a normal one and have it retry the task.
 
-## Epic 2: Malicious Agent Simulation (Remaining Work)
+## Epic 2: Malicious Agent Simulation (Completed)
 
 - [x] **Type 1 (Malicious Attack):** Implemented via attacker-specific prompts.
-- [ ] **Type 2 (Malicious Auditing):**
-    - [ ] Create prompts/logic for auditing agents to deliberately invert audit results (e.g., approve bad results, reject good results).
-    - [ ] Integrate into experiments to test the defense mechanism's resilience.
-- [ ] **Type 3 (Malicious Voting):**
-    - [ ] Create logic for agents to vote maliciously during a system-wide consensus.
-    - [ ] Integrate into experiments to test the voting mechanism's resilience.
+- [x] **Type 2 (Malicious Auditing):**
+    - [x] Create prompts/logic for auditing agents to deliberately invert audit results (e.g., approve bad results, reject good results).
+    - [x] Integrate into experiments to test the defense mechanism's resilience.
+- [x] **Type 3 (Malicious Voting):**
+    - [x] Create logic for agents to vote maliciously during a system-wide consensus.
+    - [x] Integrate into experiments to test the voting mechanism's resilience.
 
 ## Epic 3: Experimental Setup & Execution
 

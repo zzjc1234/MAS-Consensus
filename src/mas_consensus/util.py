@@ -21,6 +21,7 @@ def _process_item(
     agent_class,
     task_formatter,
     num_auditors,
+    malicious_auditor_idx,
 ):
     tasks, task_id = task_formatter(data, attacker_idx, num_agents)
 
@@ -39,6 +40,7 @@ def _process_item(
         model,
         num_auditors=num_auditors,
         attacker_idx=attacker_idx,
+        malicious_auditor_idx=malicious_auditor_idx,
     )
     graph.run(turn)
     output_path = f"./output/{model}/{ds_name}/{sample_id}/{ds_name}_{mode}.output"
@@ -58,6 +60,7 @@ def run_dataset(
     agent_class,
     task_formatter,
     num_auditors=0,
+    malicious_auditor_idx=None,
 ):
     adj_matrix = methods.generate_adj(num_agents, graph_type)
     mode = f"{graph_type}_{num_agents}_{len(attacker_idx)}"
@@ -94,6 +97,7 @@ def run_dataset(
                 agent_class,
                 task_formatter,
                 num_auditors,
+                malicious_auditor_idx,
             ),
         )
         threads.append(thread)
