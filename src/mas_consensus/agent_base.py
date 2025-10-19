@@ -1,0 +1,263 @@
+import copy
+import json
+import random
+import re
+import threading
+
+from . import methods
+
+random.seed(42)
+write_lock = threading.Lock()  # Lock for thread-safe file writing
+
+
+class BaseAgent:
+    """
+    Base class for agents that provide responses with reason and answer.
+    """
+
+    def __init__(self, idx, system_prompt, model_type="gpt-3.5-turbo"):
+        self.idx = idx
+        self.model_type = model_type
+        self.system_prompt = system_prompt
+        self.dialogue = []
+        self.last_response = {"answer": "None", "reason": "None"}
+        self.short_mem = ["None"]
+        if system_prompt:
+            self.dialogue.append({"role": "system", "content": system_prompt})
+        if "gpt" in model_type:
+            self.client = methods.get_client()
+
+    def parser(self, response):
+        """
+        Parse the response to extract answer, reason, and memory.
+        """
+        splits = re.split(r"<[A-Z_ ]+>: ", str(response).strip())
+        splits = [s for s in splits if s]
+        if len(splits) == 3:
+            reason = splits[0].strip()
+            answer = splits[1].strip()
+            memory = splits[2].strip()
+            self.last_response = {"answer": answer, "reason": reason}
+            self.short_mem.append(memory)
+        else:
+            self.last_response = {"answer": "None", "reason": response}
+            self.short_mem.append("None")
+
+        assistant_msg = {
+            "role": "assistant",
+            "content": self.last_response,
+            "memory": self.short_mem[-1],
+        }
+        return assistant_msg
+
+    def chat(self, prompt):
+        user_msg = {"role": "user", "content": prompt}
+        self.dialogue.append(user_msg)
+        response = (
+            self.client.chat.completions.create(
+                model=self.model_type,
+                messages=[self.dialogue[0], self.dialogue[-1]],
+                temperature=0,
+                max_tokens=1024,
+            )
+            .choices[0]
+            .message.content
+        )
+        assistant_msg = self.parser(response)
+        self.dialogue.append(assistant_msg)
+
+    def first_generate(self, task):
+        prompt = "FIRST GENERATE (Recall system message)\n"
+        prompt += f"Task: {task}\n"
+        prompt += "\nGenerate an initial reason, answer and memory."
+        prompt += "\nYou must format output exactly as follows, without including any additional information:"
+        prompt += "\n<REASON>: {Provide your initial reasoning here.}"
+        prompt += "\n<ANSWER>: {Provide your final answer from the reason here.}"
+        prompt += "\n<MEMORY>: {Summarize the key points in less than 100 words.}"
+        self.chat(prompt)
+
+    def re_generate(self, task, neighbors):
+        views = {}
+        prompt = "RE-GENERATE (Recall system message)\n"
+        prompt += f"Task: {task}"
+        prompt += (
+            "\nBased on your previous view, memory and the views of other agents below, provide an updated "
+            "reason, answer and a new memory regarding the discussion."
+        )
+        prompt += "\nYou must consider every view of other agents carefully."
+        prompt += f"\nYOUR PREVIOUS VIEW: {self.last_response}"
+        prompt += f"\nYOUR PREVIOUS MEMORY: {self.short_mem[-1]}"
+        prompt += "\nOTHER AGENTS' VIEWS:\n"
+        if neighbors:
+            for neighbor in neighbors:
+                views[f"Agent_{neighbor.idx}'s View:"] = {
+                    f"Agent_{neighbor.idx}'s answer": neighbor.last_response.get(
+                        "answer", "N/A"
+                    ),
+                    f"Agent_{neighbor.idx}'s reason": neighbor.last_response.get(
+                        "reason", "N/A"
+                    ),
+                }
+            prompt += str(views)
+        else:
+            prompt += "No responses from other agents.\n"
+        prompt += "\nYou must format output exactly as follows, without including any additional information:"
+        prompt += "\n<UPDATED_REASON>: {Provide your updated reasoning here.}"
+        prompt += "\n<UPDATED_ANSWER>: {Provide your updated final answer from the reason here.}"
+        prompt += (
+            "\n<UPDATED_MEMORY>: {Summarize the new memory in less than 100 words.}"
+        )
+        self.chat(prompt)
+
+    def display_dialogue(self, roles):
+        display = []
+        for item in self.dialogue:
+            if item["role"] in roles:
+                display.append(item)
+        print(f"Agent_{self.idx} Dialogue:")
+        print(json.dumps(display, indent=4, ensure_ascii=False))
+
+    def display_dialogue_idx(self, roles, i):
+        dialogue_copy = copy.deepcopy(self.dialogue)
+        print(f"Agent_{self.idx}:")
+        for item in dialogue_copy:
+            if item["role"] in roles:
+                if item["role"] == "assistant":
+                    item["memory"] = self.short_mem[i + 1]
+                print(json.dumps(item, indent=4, ensure_ascii=False))
+
+
+class SimpleAgent(BaseAgent):
+    """
+    Agent class for simple responses that only contain a response field (e.g., for adv dataset).
+    """
+
+    def __init__(self, idx, system_prompt, model_type="gpt-3.5-turbo"):
+        super().__init__(idx, system_prompt, model_type)
+        self.last_response = {"response": "None"}
+
+    def parser(self, response):
+        self.last_response = {"response": response}
+        assistant_msg = {"role": "assistant", "content": self.last_response}
+        return assistant_msg
+
+    def first_generate(self, task):
+        prompt = "FIRST GENERATE (Recall system message)\n"
+        prompt += f"Task: {task}\n"
+        self.chat(prompt)
+
+    def re_generate(self, task, neighbors):
+        views = {}
+        prompt = "RE-GENERATE (Recall system message)\n"
+        prompt += f"Task: {task}\n"
+        prompt += (
+            "\nBased on your previous view and the views of other agents below, provide an updated response "
+            "regarding the discussion."
+        )
+        prompt += "\nYou must consider every view of other agents carefully."
+        prompt += f"\nYOUR PREVIOUS VIEW: {self.last_response}"
+        prompt += "\nOTHER AGENTS' VIEWS:\n"
+        if neighbors:
+            for neighbor in neighbors:
+                views[f"Agent_{neighbor.idx}'s View:"] = {
+                    f"Agent_{neighbor.idx}'s response": neighbor.last_response.get(
+                        "response", "N/A"
+                    )
+                }
+            prompt += str(views)
+        else:
+            prompt += "No responses from other agents.\n"
+        self.chat(prompt)
+
+
+class AgentGraph:
+    """
+    Manages a graph of agents and their interactions.
+    """
+
+    def __init__(
+        self,
+        num_agents,
+        adj_matrix,
+        system_prompts,
+        tasks,
+        task_id,
+        agent_class,
+        model_type="gpt-3.5-turbo",
+    ):
+        assert len(system_prompts) == num_agents
+        assert len(adj_matrix) == num_agents
+        assert len(adj_matrix[0]) == num_agents
+        self.num_agents = num_agents
+        self.adj_matrix = adj_matrix
+        self.tasks = tasks
+        self.model_type = model_type
+        self.agents = [
+            agent_class(
+                i,
+                f"You are Agent_{i}. Always keep this role in mind.\n"
+                + system_prompts[i],
+                model_type,
+            )
+            for i in range(num_agents)
+        ]
+        self.record = {"task_id": task_id}
+
+    def run(self, turns):
+        # First generate
+        threads = []
+        for i, agent in enumerate(self.agents):
+            thread = threading.Thread(
+                target=agent.first_generate, args=(self.tasks[i],)
+            )
+            threads.append(thread)
+            thread.start()
+        for thread in threads:
+            thread.join()
+
+        # Re-generate for given number of turns
+        for _ in range(turns):
+            threads = []
+            for i, agent in enumerate(self.agents):
+                neighbors = [
+                    self.agents[j]
+                    for j, conn in enumerate(self.adj_matrix[i])
+                    if conn == 1
+                ]
+                thread = threading.Thread(
+                    target=agent.re_generate,
+                    args=(
+                        self.tasks[i],
+                        neighbors,
+                    ),
+                )
+                threads.append(thread)
+                thread.start()
+            for thread in threads:
+                thread.join()
+
+    def save(self, output_path, format):
+        for i, agent in enumerate(self.agents):
+            self.record[f"Agent_{i}"] = agent.dialogue
+
+        with write_lock:
+            methods.create_file(output_path)
+            with open(output_path, "a", encoding="utf-8") as f:
+                if format:
+                    f.write(
+                        json.dumps(self.record, indent=4, ensure_ascii=False) + "\n"
+                    )
+                else:
+                    f.write(str(self.record) + "\n")
+
+    def display_dialogues(self, roles):
+        for agent in self.agents:
+            print("*" * 100)
+            agent.display_dialogue(roles)
+
+    def display_dialogues_turn(self, roles, turn):
+        for i in range(turn):
+            print("*" * 100)
+            print(f"Turn{i}:")
+            for agent in self.agents:
+                agent.display_dialogue_idx(roles, i)
