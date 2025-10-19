@@ -15,13 +15,16 @@ class BaseAgent:
     Base class for agents that provide responses with reason and answer.
     """
 
-    def __init__(self, idx, system_prompt, model_type="gpt-3.5-turbo"):
+    def __init__(
+        self, idx, system_prompt, model_type="gpt-3.5-turbo", is_malicious=False
+    ):
         self.idx = idx
         self.model_type = model_type
         self.system_prompt = system_prompt
         self.dialogue = []
         self.last_response = {"answer": "None", "reason": "None"}
         self.short_mem = ["None"]
+        self.is_malicious = is_malicious
         if system_prompt:
             self.dialogue.append({"role": "system", "content": system_prompt})
         if "gpt" in model_type:
@@ -148,8 +151,10 @@ class SimpleAgent(BaseAgent):
     Agent class for simple responses that only contain a response field (e.g., for adv dataset).
     """
 
-    def __init__(self, idx, system_prompt, model_type="gpt-3.5-turbo"):
-        super().__init__(idx, system_prompt, model_type)
+    def __init__(
+        self, idx, system_prompt, model_type="gpt-3.5-turbo", is_malicious=False
+    ):
+        super().__init__(idx, system_prompt, model_type, is_malicious)
         self.last_response = {"response": "None"}
 
     def parser(self, response):
@@ -202,6 +207,7 @@ class AgentGraph:
         model_type="gpt-3.5-turbo",
         num_auditors=0,
         attacker_idx=None,
+        malicious_auditor_idx=None,
     ):
         assert len(system_prompts) == num_agents
         assert len(adj_matrix) == num_agents
@@ -210,24 +216,32 @@ class AgentGraph:
         self.adj_matrix = adj_matrix
         self.tasks = tasks
         self.model_type = model_type
+        self.attacker_idx = attacker_idx if attacker_idx is not None else []
+        self.malicious_auditor_idx = (
+            malicious_auditor_idx if malicious_auditor_idx is not None else []
+        )
+        from . import defense, prompts
+
+        self.standard_system_prompt = prompts.discussion_prompt["system_prompt"]
         self.agents = [
             agent_class(
                 i,
                 f"You are Agent_{i}. Always keep this role in mind.\n"
                 + system_prompts[i],
                 model_type,
+                is_malicious=(i in self.attacker_idx),
             )
             for i in range(num_agents)
         ]
         self.record = {"task_id": task_id, "audit_results": [], "voting_results": []}
         self.num_auditors = num_auditors
-        self.attacker_idx = attacker_idx if attacker_idx is not None else []
-        from . import defense, prompts
 
         self.auditor_agents = [
             defense.AuditorAgent(
                 i,
-                prompts.discussion_prompt["auditor_system_prompt"],
+                prompts.discussion_prompt["malicious_auditor_system_prompt"]
+                if i in self.malicious_auditor_idx
+                else prompts.discussion_prompt["auditor_system_prompt"],
                 model_type,
             )
             for i in range(num_auditors)
@@ -306,10 +320,18 @@ class AgentGraph:
         original_prompts = {agent.idx: agent.dialogue[0] for agent in voters}
 
         for voter in voters:
-            voter.dialogue[0] = {
-                "role": "system",
-                "content": prompts.discussion_prompt["voter_system_prompt"],
-            }
+            if voter.is_malicious:
+                voter.dialogue[0] = {
+                    "role": "system",
+                    "content": prompts.discussion_prompt[
+                        "malicious_voter_system_prompt"
+                    ],
+                }
+            else:
+                voter.dialogue[0] = {
+                    "role": "system",
+                    "content": prompts.discussion_prompt["voter_system_prompt"],
+                }
             voter.vote(agent_to_vote_on, self.tasks[agent_to_vote_on.idx])
             votes.append(voter.last_response.get("vote"))
 
@@ -319,7 +341,15 @@ class AgentGraph:
 
         malicious_votes = votes.count("Malicious")
         if malicious_votes > len(voters) / 2:
-            print(f"Vote passed: Agent {agent_to_vote_on.idx} confirmed as malicious.")
+            print(
+                f"Vote passed: Agent {agent_to_vote_on.idx} confirmed as malicious. Reforming agent."
+            )
+            agent_to_vote_on.is_malicious = False
+            agent_to_vote_on.dialogue[0] = {
+                "role": "system",
+                "content": f"You are Agent_{agent_to_vote_on.idx}. Always keep this role in mind.\n"
+                + self.standard_system_prompt,
+            }
             self.record["voting_results"].append(
                 {
                     "turn": turn_num,
