@@ -1,9 +1,9 @@
 import re
-
-import methods
-import networkx as nx
 import numpy as np
 from tqdm import tqdm
+
+from . import methods
+import networkx as nx
 
 
 def evaluate_csqa(dataset_path, output_path, attacker_num, type):

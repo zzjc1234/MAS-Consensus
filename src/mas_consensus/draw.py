@@ -1,9 +1,10 @@
-import evaluate
 import matplotlib.pyplot as plt
-import methods
 import numpy as np
 import pandas as pd
 import seaborn as sns
+
+from . import evaluate
+from . import methods
 
 
 def SAA_heatmap(metric, agent_labels=None, round_labels=None):
