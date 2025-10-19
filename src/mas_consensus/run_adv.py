@@ -23,6 +23,7 @@ def run_dataset(
     num_agents,
     json_format,
     turn,
+    num_auditors=0,
 ):
     util.run_dataset(
         ds_name,
@@ -36,6 +37,7 @@ def run_dataset(
         turn,
         agent_class=agent_base.SimpleAgent,
         task_formatter=task_formatter,
+        num_auditors=num_auditors,
     )
 
 
@@ -48,6 +50,7 @@ if __name__ == "__main__":
     p = 8
     reg_turn = 9
     num_agents = 6
+    num_auditors = 2
     attacker_nums = [num_agents - 1]
     for sample_id in sample_ids:
         for attacker_num in attacker_nums:
@@ -63,4 +66,5 @@ if __name__ == "__main__":
                 num_agents,
                 json_format,
                 reg_turn,
+                num_auditors=num_auditors,
             )
