@@ -178,4 +178,5 @@ paper.pdf
 *.gz
 notion.md
 .qwen
+QWEN.md
 **/output/
