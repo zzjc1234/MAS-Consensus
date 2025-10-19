@@ -1,8 +1,8 @@
 # MAS Consensus
 
-A multi-agent system for consensus-based text processing, implementing the "Chain of Agents" approach for analyzing long-context tasks with large language models.
+A multi-agent system for consensus-based text processing, implementing the "NetSafe" approach for analyzing how reviewer avoid malicious nodes during the tasks with large language models.
 
-Based on the paper: [Chain of Agents: Large Language Models Collaborating on Long-Context Tasks](https://openreview.net/pdf?id=LuCLf4BJsr)
+Based on the paper: [Netsafe](https://anonymous.4open.science/r/NetSafe-B726/README.md)
 
 ## Installation
 
