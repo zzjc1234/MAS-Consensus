@@ -235,6 +235,8 @@ class AgentGraph:
         ]
         self.record = {"task_id": task_id, "audit_results": [], "voting_results": []}
         self.num_auditors = num_auditors
+        self.voting_lock = threading.Lock()
+        self.voting_initiated_agents = set()
 
         self.auditor_agents = [
             defense.AuditorAgent(
@@ -261,6 +263,7 @@ class AgentGraph:
 
         # Re-generate for given number of turns
         for turn_num in range(turns):
+            self.voting_initiated_agents.clear()
             threads = []
             for i, agent in enumerate(self.agents):
                 neighbors = [
@@ -287,12 +290,15 @@ class AgentGraph:
                     self.agents, k=min(len(self.agents), 3)
                 )  # Audit up to 3 agents
                 for agent_to_audit in agents_to_audit:
-                    auditor = random.choice(self.auditor_agents)
-                    thread = threading.Thread(
-                        target=self._run_audit, args=(auditor, agent_to_audit, turn_num)
-                    )
-                    audit_threads.append(thread)
-                    thread.start()
+                    for auditor in (
+                        self.auditor_agents
+                    ):  # All auditors inspect each selected agent
+                        thread = threading.Thread(
+                            target=self._run_audit,
+                            args=(auditor, agent_to_audit, turn_num),
+                        )
+                        audit_threads.append(thread)
+                        thread.start()
                 for thread in audit_threads:
                     thread.join()
 
@@ -307,10 +313,13 @@ class AgentGraph:
         }
         self.record["audit_results"].append(audit_record)
         if judgement is False:
-            print(
-                f"Audit failed: Auditor {auditor.idx} flagged Agent {agent_to_audit.idx} at turn {turn_num}. Starting vote."
-            )
-            self._run_voting(agent_to_audit, turn_num)
+            with self.voting_lock:
+                if agent_to_audit.idx not in self.voting_initiated_agents:
+                    print(
+                        f"Audit failed: Auditor {auditor.idx} flagged Agent {agent_to_audit.idx} at turn {turn_num}. Starting vote."
+                    )
+                    self.voting_initiated_agents.add(agent_to_audit.idx)
+                    self._run_voting(agent_to_audit, turn_num)
 
     def _run_voting(self, agent_to_vote_on, turn_num):
         from . import prompts
