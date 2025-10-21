@@ -18,9 +18,13 @@ Solution: stepwise random auditing and voting. Specifically:
 
   For example, under normal circumstances, given the context text, agents 1, 2, 3's answers should be:
 
-  > 1: Vera Cruz, "Hush...Hush, Sweet Charlotte, Robert Aldrich, a cameo role as, Kiss Me Deadly
-  > 2: Robert Aldrich, Kiss Me Deadly
-  > 3: Robert Aldrich
+  > 1：Robert Aldrich...Vera
+  > Cruz, Kiss Me Deadly
+
+  > 2：Mary Astor...
+  > a cameo role as
+
+  > 3： Mary Astor
 
   If agent 1 is maliciously attacked, it will find content similar to zhong1 in the text to mislead; through chained transmission, the attack goal is ultimately achieved. Example:
 
