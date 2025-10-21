@@ -217,7 +217,7 @@ if __name__ == "__main__":
         "--dataset",
         type=str,
         default="csqa",
-        help="Dataset to use (e.g., csqa, gsm8k, fact, bias, adv)",
+        help="Dataset to use (e.g., csqa, gsm8k, fact, bias, adv), or 'all' to run all datasets.",
     )
     parser.add_argument(
         "--attacker_num",
@@ -225,48 +225,107 @@ if __name__ == "__main__":
         default=1,
         help="Number of malicious agents for the attacked/defended scenarios.",
     )
+    parser.add_argument(
+        "--fast",
+        action="store_true",
+        help="Use smaller parameters for a quick test run (turn=1, num_agents=3, sample_id=0).",
+    )
+    parser.add_argument(
+        "--sample_id", type=int, default=3, help="Sample ID to use from the dataset."
+    )
+    parser.add_argument(
+        "--reg_turn", type=int, default=9, help="Number of regulation turns."
+    )
+    parser.add_argument(
+        "--num_agents", type=int, default=6, help="Number of agents in the simulation."
+    )
+    parser.add_argument(
+        "--skip-evaluation",
+        action="store_true",
+        help="Only run the simulation and skip evaluation.",
+    )
+    parser.add_argument(
+        "--evaluation-only",
+        action="store_true",
+        help="Only run evaluation on existing results.",
+    )
+
     args = parser.parse_args()
 
+    if args.evaluation_only and args.skip_evaluation:
+        print("Error: --evaluation-only and --skip-evaluation cannot be used together.")
+        exit(1)
+
     # Define experiment parameters
-    sample_id = 3
+    sample_id = args.sample_id
     graph_type = "complete"
     model = "gpt-4o-mini"
     json_format = False
     p = 16
-    reg_turn = 9
-    num_agents = 6
+    reg_turn = args.reg_turn
+    num_agents = args.num_agents
 
-    # Get dataset-specific configuration
-    config = experiment_config.get_dataset_config(args.dataset)
-    attacker_idx = list(range(args.attacker_num))
+    if args.fast:
+        reg_turn = 1
+        num_agents = 3
+        sample_id = 0
 
-    # Create output directory if it doesn't exist
-    output_dir = f"./output/{model}/{args.dataset}/{sample_id}"
-    os.makedirs(output_dir, exist_ok=True)
+    if args.dataset == "all":
+        datasets = ["csqa", "gsm8k", "fact", "bias", "adv"]
+    else:
+        datasets = [args.dataset]
 
-    # Run the comparison experiment
-    baseline_path, attacked_path, defended_path = run_defense_comparison(
-        ds_name=args.dataset,
-        sample_id=sample_id,
-        graph_type=graph_type,
-        model=model,
-        p=p,
-        num_agents=num_agents,
-        json_format=json_format,
-        turn=reg_turn,
-        output_dir=output_dir,
-        task_formatter=config.task_formatter,
-        agent_class=config.agent_class,
-        attacker_idx=attacker_idx,
-    )
+    for ds_name in datasets:
+        print(f"--- Running experiment for dataset: {ds_name} ---")
+        # Get dataset-specific configuration
+        config = experiment_config.get_dataset_config(ds_name)
+        attacker_idx = list(range(args.attacker_num))
 
-    # Evaluate and plot results
-    dataset_path = f"./dataset/{args.dataset}.jsonl"
-    evaluate_and_plot_comparison(
-        dataset_path=dataset_path,
-        baseline_output_path=baseline_path,
-        attacked_output_path=attacked_path,
-        defended_output_path=defended_path,
-        attacker_num=args.attacker_num,
-        evaluation_type="SAA",  # You can change to "MJA" for different evaluation
-    )
+        output_dir = f"./output/{model}/{ds_name}/{sample_id}"
+
+        if not args.evaluation_only:
+            print("Running simulation...")
+            os.makedirs(output_dir, exist_ok=True)
+            baseline_path, attacked_path, defended_path = run_defense_comparison(
+                ds_name=ds_name,
+                sample_id=sample_id,
+                graph_type=graph_type,
+                model=model,
+                p=p,
+                num_agents=num_agents,
+                json_format=json_format,
+                turn=reg_turn,
+                output_dir=output_dir,
+                task_formatter=config.task_formatter,
+                agent_class=config.agent_class,
+                attacker_idx=attacker_idx,
+            )
+        else:
+            print("Skipping simulation. Assuming result files exist.")
+            baseline_path = f"{output_dir}/{ds_name}_{graph_type}_{num_agents}_0.output"
+            attacked_path = f"{output_dir}/{ds_name}_{graph_type}_{num_agents}_{args.attacker_num}.output"
+            defended_path = f"{output_dir}/{ds_name}_{graph_type}_{num_agents}_{args.attacker_num}_defended.output"
+
+            if not all(
+                os.path.exists(p) for p in [baseline_path, attacked_path, defended_path]
+            ):
+                print(
+                    f"Error: Not all output files found in {output_dir} for dataset {ds_name}. Cannot run evaluation."
+                )
+                print(
+                    f"Missing one of: \n{baseline_path}\n{attacked_path}\n{defended_path}"
+                )
+                continue
+
+        if not args.skip_evaluation:
+            print("Running evaluation...")
+            # Evaluate and plot results
+            dataset_path = f"./dataset/{ds_name}.jsonl"
+            evaluate_and_plot_comparison(
+                dataset_path=dataset_path,
+                baseline_output_path=baseline_path,
+                attacked_output_path=attacked_path,
+                defended_output_path=defended_path,
+                attacker_num=args.attacker_num,
+                evaluation_type="SAA",  # You can change to "MJA" for different evaluation
+            )
