@@ -436,7 +436,7 @@ for exp in "${EXPANDED_EXPERIMENTS[@]}"; do
                     --num_agents $NUM_AGENTS \
                     --num_auditors $NUM_AUDITORS \
                     --reg_turn $REG_TURN \
-                    --parallel $THREADS"
+                    --threads $THREADS"
                 run_job "$name" "$cmd"
             done
             ;;
@@ -453,7 +453,7 @@ for exp in "${EXPANDED_EXPERIMENTS[@]}"; do
                     --num_auditors $NUM_AUDITORS \
                     --reg_turn $REG_TURN \
                     --attacker_num 1 \
-                    --parallel $THREADS"
+                    --threads $THREADS"
                 run_job "$name" "$cmd"
             done
             ;;
@@ -469,7 +469,7 @@ for exp in "${EXPANDED_EXPERIMENTS[@]}"; do
                     --num_auditors $NUM_AUDITORS \
                     --reg_turn $REG_TURN \
                     --attacker_num 1 \
-                    --parallel $THREADS"
+                    --threads $THREADS"
                 run_job "$name" "$cmd"
             done
             ;;
@@ -485,7 +485,7 @@ for exp in "${EXPANDED_EXPERIMENTS[@]}"; do
                     --num_agents 4 \
                     --num_auditors $NUM_AUDITORS \
                     --reg_turn 3 \
-                    --parallel $THREADS"
+                    --threads $THREADS"
                 run_job "$name" "$cmd"
             done
             ;;
@@ -500,7 +500,7 @@ for exp in "${EXPANDED_EXPERIMENTS[@]}"; do
                     --num_agents $NUM_AGENTS \
                     --num_auditors $NUM_AUDITORS \
                     --reg_turn $REG_TURN \
-                    --parallel $THREADS"
+                    --threads $THREADS"
                 run_job "$name" "$cmd"
             done
             ;;
