@@ -14,6 +14,10 @@ if [ -f ".venv/bin/activate" ]; then
 elif [ -f "venv/bin/activate" ]; then
     source venv/bin/activate
     echo "✓ Activated Python virtual environment"
+else
+    echo "Please create Python virtual environment"
+    echo "Use: uv sync --extra dev"
+    exit 1
 fi
 
 # Add src directory to PYTHONPATH
