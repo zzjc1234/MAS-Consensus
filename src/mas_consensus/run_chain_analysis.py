@@ -20,6 +20,7 @@ def run_chain_experiment(
     task_formatter,
     agent_class,
     attacker_idx,
+    num_auditors=2,
 ):
     """
     Run experiment with chain topology and N faulty agents + defense mechanism
@@ -41,7 +42,7 @@ def run_chain_experiment(
         turn=turn,
         agent_class=agent_class,
         task_formatter=task_formatter,
-        num_auditors=2,  # Enable auditing with 2 auditors
+        num_auditors=num_auditors,  # Enable auditing
         malicious_auditor_idx=None,  # Honest auditors
     )
 
@@ -216,6 +217,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "--attacker_num", type=int, default=1, help="Number of malicious agents."
     )
+    parser.add_argument(
+        "--num_auditors",
+        type=int,
+        default=2,
+        help="Number of auditor agents (set to 0 to disable auditing).",
+    )
     args = parser.parse_args()
 
     # Define experiment parameters
@@ -226,6 +233,7 @@ if __name__ == "__main__":
     p = 16
     reg_turn = 9
     num_agents = 6
+    num_auditors = args.num_auditors
 
     # Get dataset-specific configuration
     config = experiment_config.get_dataset_config(args.dataset)
@@ -249,6 +257,7 @@ if __name__ == "__main__":
         task_formatter=config.task_formatter,
         agent_class=config.agent_class,
         attacker_idx=attacker_idx,
+        num_auditors=num_auditors,
     )
 
     # Evaluate and plot results

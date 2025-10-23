@@ -18,6 +18,7 @@ def run_efficiency_experiments(
     output_dir,
     task_formatter,
     agent_class,
+    num_auditors=2,
 ):
     """
     Run efficiency experiments comparing different scenarios:
@@ -90,7 +91,7 @@ def run_efficiency_experiments(
         turn=turn,
         agent_class=agent_class,
         task_formatter=task_formatter,
-        num_auditors=2,  # Enable auditing
+        num_auditors=num_auditors,  # Enable auditing
         malicious_auditor_idx=[0],  # Malicious auditors
     )
     type2_time = time.time() - start_time
@@ -113,7 +114,7 @@ def run_efficiency_experiments(
         turn=turn,
         agent_class=agent_class,
         task_formatter=task_formatter,
-        num_auditors=2,  # Enable auditing to trigger voting
+        num_auditors=num_auditors,  # Enable auditing to trigger voting
         malicious_auditor_idx=None,  # Honest auditors, but voting will be malicious
     )
     type3_time = time.time() - start_time
@@ -136,7 +137,7 @@ def run_efficiency_experiments(
         turn=turn,
         agent_class=agent_class,
         task_formatter=task_formatter,
-        num_auditors=2,  # Enable auditing
+        num_auditors=num_auditors,  # Enable auditing
         malicious_auditor_idx=[0],  # Malicious auditors
     )
     combined_time = time.time() - start_time
@@ -227,6 +228,12 @@ if __name__ == "__main__":
         default="csqa",
         help="Dataset to use (e.g., csqa, gsm8k, fact, bias, adv)",
     )
+    parser.add_argument(
+        "--num_auditors",
+        type=int,
+        default=2,
+        help="Number of auditor agents (set to 0 to disable auditing).",
+    )
     args = parser.parse_args()
 
     # Define experiment parameters (use a smaller sample for efficiency test)
@@ -237,6 +244,7 @@ if __name__ == "__main__":
     p = 4  # Using fewer parallel processes for clearer timing
     reg_turn = 3  # Using fewer turns for quicker test
     num_agents = 4  # Using fewer agents for quicker test
+    num_auditors = args.num_auditors
 
     # Get dataset-specific configuration
     config = experiment_config.get_dataset_config(args.dataset)
@@ -258,6 +266,7 @@ if __name__ == "__main__":
         output_dir=output_dir,
         task_formatter=config.task_formatter,
         agent_class=config.agent_class,
+        num_auditors=num_auditors,
     )
 
     # Create comparison plot

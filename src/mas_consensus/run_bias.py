@@ -42,7 +42,7 @@ if __name__ == "__main__":
     p = 8
     reg_turn = 9
     num_agents = 8
-    num_auditors = 2
+    num_auditors = 2  # Number of auditor agents (set to 0 to disable auditing)
     malicious_auditor_idx = [0]
     attacker_nums = [0]
 
