@@ -218,13 +218,13 @@ if __name__ == "__main__":
         "--dataset",
         type=str,
         default="csqa",
-        help="Dataset to use (e.g., csqa, gsm8k, fact, bias, adv), or 'all' to run all datasets.",
+        help="Dataset to use (e.g., csqa, gsm8k, fact, bias, adv), or 'all' to run all datasets. Default: csqa",
     )
     parser.add_argument(
         "--attacker_num",
         type=int,
         default=1,
-        help="Number of malicious agents for the attacked/defended scenarios.",
+        help="Number of malicious agents for the attacked/defended scenarios. Default: 1",
     )
     parser.add_argument(
         "--fast",
@@ -232,19 +232,25 @@ if __name__ == "__main__":
         help="Use smaller parameters for a quick test run (turn=1, num_agents=3, sample_id=0).",
     )
     parser.add_argument(
-        "--sample_id", type=int, default=3, help="Sample ID to use from the dataset."
+        "--sample_id",
+        type=int,
+        default=3,
+        help="Sample ID to use from the dataset. Default: 3",
     )
     parser.add_argument(
-        "--reg_turn", type=int, default=9, help="Number of regulation turns."
+        "--reg_turn", type=int, default=9, help="Number of regulation turns. Default: 9"
     )
     parser.add_argument(
-        "--num_agents", type=int, default=6, help="Number of agents in the simulation."
+        "--num_agents",
+        type=int,
+        default=6,
+        help="Number of agents in the simulation. Default: 6",
     )
     parser.add_argument(
         "--num_auditors",
         type=int,
         default=2,
-        help="Number of auditor agents (set to 0 to disable auditing).",
+        help="Number of auditor agents (set to 0 to disable auditing). Default: 2",
     )
     parser.add_argument(
         "--skip-evaluation",

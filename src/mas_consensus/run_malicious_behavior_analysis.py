@@ -230,24 +230,57 @@ if __name__ == "__main__":
         "--dataset",
         type=str,
         default="csqa",
-        help="Dataset to use (e.g., csqa, gsm8k, fact, bias, adv)",
+        help="Dataset to use (e.g., csqa, gsm8k, fact, bias, adv). Default: csqa",
+    )
+    parser.add_argument(
+        "--sample_id",
+        type=int,
+        default=3,
+        help="Sample ID to use from the dataset. Default: 3",
+    )
+    parser.add_argument(
+        "--graph_type",
+        type=str,
+        default="complete",
+        help="Graph topology. Default: complete (recommended for malicious behavior analysis)",
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default="gpt-4o-mini",
+        help="Model to use. Default: gpt-4o-mini",
+    )
+    parser.add_argument(
+        "--num_agents",
+        type=int,
+        default=6,
+        help="Number of agents in the simulation. Default: 6",
+    )
+    parser.add_argument(
+        "--reg_turn", type=int, default=9, help="Number of regulation turns. Default: 9"
     )
     parser.add_argument(
         "--num_auditors",
         type=int,
         default=2,
-        help="Number of auditor agents (set to 0 to disable auditing).",
+        help="Number of auditor agents (set to 0 to disable auditing). Default: 2",
+    )
+    parser.add_argument(
+        "--parallel",
+        type=int,
+        default=16,
+        help="Number of parallel threads. Default: 16",
     )
     args = parser.parse_args()
 
     # Define experiment parameters
-    sample_id = 3
-    graph_type = "complete"  # Using complete graph for better interaction
-    model = "gpt-4o-mini"
+    sample_id = args.sample_id
+    graph_type = args.graph_type
+    model = args.model
     json_format = False
-    p = 16
-    reg_turn = 9
-    num_agents = 6
+    p = args.parallel
+    reg_turn = args.reg_turn
+    num_agents = args.num_agents
     num_auditors = args.num_auditors
 
     # Get dataset-specific configuration
