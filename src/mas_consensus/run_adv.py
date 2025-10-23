@@ -1,3 +1,5 @@
+import argparse
+
 from . import util
 from . import experiment_config
 
@@ -34,17 +36,64 @@ def run_dataset(
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Run adversarial experiments.")
+    parser.add_argument(
+        "--sample_id",
+        type=int,
+        default=3,
+        help="Sample ID to use from the dataset. Default: 3",
+    )
+    parser.add_argument(
+        "--attacker_num",
+        type=int,
+        default=None,
+        help="Number of malicious agents. Default: num_agents - 1",
+    )
+    parser.add_argument(
+        "--graph_type",
+        type=str,
+        default="complete",
+        help="Graph topology (e.g., complete, chain, circle, tree, star). Default: complete",
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default="gpt-3.5-turbo",
+        help="Model to use. Default: gpt-3.5-turbo",
+    )
+    parser.add_argument(
+        "--num_agents",
+        type=int,
+        default=6,
+        help="Number of agents in the simulation. Default: 6",
+    )
+    parser.add_argument(
+        "--reg_turn", type=int, default=9, help="Number of regulation turns. Default: 9"
+    )
+    parser.add_argument(
+        "--num_auditors",
+        type=int,
+        default=2,
+        help="Number of auditor agents (set to 0 to disable auditing). Default: 2",
+    )
+    parser.add_argument(
+        "--parallel", type=int, default=8, help="Number of parallel threads. Default: 8"
+    )
+    args = parser.parse_args()
+
     dataset = "adv"
-    sample_ids = [3]
-    graph_type = "complete"
-    model = "gpt-3.5-turbo"
+    sample_ids = [args.sample_id]
+    graph_type = args.graph_type
+    model = args.model
     json_format = False
-    p = 8
-    reg_turn = 9
-    num_agents = 6
-    num_auditors = 2  # Number of auditor agents (set to 0 to disable auditing)
+    p = args.parallel
+    reg_turn = args.reg_turn
+    num_agents = args.num_agents
+    num_auditors = args.num_auditors
     malicious_auditor_idx = [0]
-    attacker_nums = [num_agents - 1]
+    attacker_nums = [
+        args.attacker_num if args.attacker_num is not None else num_agents - 1
+    ]
 
     for sample_id in sample_ids:
         for attacker_num in attacker_nums:
