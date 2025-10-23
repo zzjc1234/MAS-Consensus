@@ -30,6 +30,12 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Job tracking arrays (initialized early for trap handler)
+PIDS=()
+JOB_NAMES=()
+JOB_LOGS=()
+JOB_COUNT=0
+
 # Default configuration
 LOG_DIR="./logs/$(date +%Y%m%d_%H%M%S)"
 MAX_PARALLEL=${MAX_PARALLEL:-4}  # Maximum number of parallel jobs
@@ -174,6 +180,60 @@ log_warning() {
     echo -e "${YELLOW}[$(date +%H:%M:%S)] ⚠${NC} $*"
 }
 
+# Helper function to kill a process tree recursively
+kill_process_tree() {
+    local pid=$1
+    local signal=${2:-TERM}
+
+    # Get all child PIDs
+    local children=$(pgrep -P $pid 2>/dev/null)
+
+    # Recursively kill children first
+    for child in $children; do
+        kill_process_tree $child $signal
+    done
+
+    # Kill the parent process
+    if ps -p "$pid" > /dev/null 2>&1; then
+        kill -$signal $pid 2>/dev/null
+    fi
+}
+
+# Signal handler for Ctrl+C and termination
+cleanup_jobs() {
+    echo ""
+    log_warning "Interrupted! Cleaning up running jobs..."
+
+    # Kill all tracked background jobs and their entire process trees
+    for i in "${!PIDS[@]}"; do
+        local pid=${PIDS[$i]}
+        local name=${JOB_NAMES[$i]}
+
+        if ps -p "$pid" > /dev/null 2>&1; then
+            log_warning "Terminating job: $name (PID: $pid) and all child processes"
+            kill_process_tree $pid TERM
+        fi
+    done
+
+    # Wait a moment for graceful shutdown
+    sleep 1
+
+    # Force kill any remaining jobs and their children
+    for pid in "${PIDS[@]}"; do
+        if ps -p "$pid" > /dev/null 2>&1; then
+            log_warning "Force killing remaining processes for PID: $pid"
+            kill_process_tree $pid KILL
+        fi
+    done
+
+    echo ""
+    log_error "Experiment run interrupted and cleaned up."
+    exit 130  # Standard exit code for SIGINT
+}
+
+# Set up trap handlers
+trap cleanup_jobs SIGINT SIGTERM
+
 # Parse arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -244,12 +304,6 @@ fi
 
 # Create log directory
 mkdir -p "$LOG_DIR"
-
-# Job tracking
-declare -a PIDS
-declare -a JOB_NAMES
-declare -a JOB_LOGS
-JOB_COUNT=0
 
 # Function to run a command in background with logging
 run_job() {
