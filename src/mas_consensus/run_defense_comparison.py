@@ -20,6 +20,7 @@ def run_defense_comparison(
     task_formatter,
     agent_class,
     attacker_idx,
+    num_auditors=2,
 ):
     """
     Run three scenarios: Baseline, Attacked, and Defended
@@ -83,7 +84,7 @@ def run_defense_comparison(
         turn=turn,
         agent_class=agent_class,
         task_formatter=task_formatter,
-        num_auditors=2,  # Enable auditing with 2 auditors
+        num_auditors=num_auditors,  # Enable auditing
         malicious_auditor_idx=None,  # Honest auditors in this scenario
     )
 
@@ -240,6 +241,12 @@ if __name__ == "__main__":
         "--num_agents", type=int, default=6, help="Number of agents in the simulation."
     )
     parser.add_argument(
+        "--num_auditors",
+        type=int,
+        default=2,
+        help="Number of auditor agents (set to 0 to disable auditing).",
+    )
+    parser.add_argument(
         "--skip-evaluation",
         action="store_true",
         help="Only run the simulation and skip evaluation.",
@@ -264,6 +271,7 @@ if __name__ == "__main__":
     p = 16
     reg_turn = args.reg_turn
     num_agents = args.num_agents
+    num_auditors = args.num_auditors
 
     if args.fast:
         reg_turn = 1
@@ -299,6 +307,7 @@ if __name__ == "__main__":
                 task_formatter=config.task_formatter,
                 agent_class=config.agent_class,
                 attacker_idx=attacker_idx,
+                num_auditors=num_auditors,
             )
         else:
             print("Skipping simulation. Assuming result files exist.")

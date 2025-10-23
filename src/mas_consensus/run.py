@@ -15,6 +15,7 @@ if __name__ == "__main__":
     num_agents_list = [7, 8, 9, 10]
     # attacker_idx = [0, 1]
     attacker_nums = [0]
+    num_auditors = 2  # Number of auditor agents (set to 0 to disable auditing)
     for num_agents in num_agents_list:
         for dataset in datasets:
             for graph_type in graph_types:
@@ -35,6 +36,7 @@ if __name__ == "__main__":
                                 num_agents,
                                 json_format,
                                 reg_turn,
+                                num_auditors=num_auditors,
                             )
                         if "csqa" in dataset:
                             run_csqa.run_dataset(
@@ -47,6 +49,7 @@ if __name__ == "__main__":
                                 num_agents,
                                 json_format,
                                 reg_turn,
+                                num_auditors=num_auditors,
                             )
                         if "gsm8k" in dataset:
                             run_gsm8k.run_dataset(
@@ -59,6 +62,7 @@ if __name__ == "__main__":
                                 num_agents,
                                 json_format,
                                 reg_turn,
+                                num_auditors=num_auditors,
                             )
                         if "bias" in dataset:
                             run_bias.run_dataset(
@@ -71,6 +75,7 @@ if __name__ == "__main__":
                                 num_agents,
                                 json_format,
                                 reg_turn,
+                                num_auditors=num_auditors,
                             )
                         if "adv" in dataset:
                             run_adv.run_dataset(
@@ -83,4 +88,5 @@ if __name__ == "__main__":
                                 num_agents,
                                 json_format,
                                 reg_turn,
+                                num_auditors=num_auditors,
                             )

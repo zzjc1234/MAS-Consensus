@@ -19,6 +19,7 @@ def run_malicious_behavior_experiments(
     output_dir,
     task_formatter,
     agent_class,
+    num_auditors=2,
 ):
     """
     Run experiments for different malicious behaviors:
@@ -43,7 +44,7 @@ def run_malicious_behavior_experiments(
         turn=turn,
         agent_class=agent_class,
         task_formatter=task_formatter,
-        num_auditors=2,  # Enable auditing
+        num_auditors=num_auditors,  # Enable auditing
         malicious_auditor_idx=None,  # Honest auditors
     )
 
@@ -63,7 +64,7 @@ def run_malicious_behavior_experiments(
         turn=turn,
         agent_class=agent_class,
         task_formatter=task_formatter,
-        num_auditors=2,  # Enable auditing
+        num_auditors=num_auditors,  # Enable auditing
         malicious_auditor_idx=[0, 1],  # Malicious auditors at indices 0, 1
     )
 
@@ -85,7 +86,7 @@ def run_malicious_behavior_experiments(
         turn=turn,
         agent_class=agent_class,
         task_formatter=task_formatter,
-        num_auditors=2,  # Enable auditing
+        num_auditors=num_auditors,  # Enable auditing
         malicious_auditor_idx=None,  # Honest auditors but malicious voters
     )
 
@@ -107,7 +108,7 @@ def run_malicious_behavior_experiments(
         turn=turn,
         agent_class=agent_class,
         task_formatter=task_formatter,
-        num_auditors=2,  # Enable auditing
+        num_auditors=num_auditors,  # Enable auditing
         malicious_auditor_idx=[0],  # Some malicious auditors
     )
 
@@ -231,6 +232,12 @@ if __name__ == "__main__":
         default="csqa",
         help="Dataset to use (e.g., csqa, gsm8k, fact, bias, adv)",
     )
+    parser.add_argument(
+        "--num_auditors",
+        type=int,
+        default=2,
+        help="Number of auditor agents (set to 0 to disable auditing).",
+    )
     args = parser.parse_args()
 
     # Define experiment parameters
@@ -241,6 +248,7 @@ if __name__ == "__main__":
     p = 16
     reg_turn = 9
     num_agents = 6
+    num_auditors = args.num_auditors
 
     # Get dataset-specific configuration
     config = experiment_config.get_dataset_config(args.dataset)
@@ -262,6 +270,7 @@ if __name__ == "__main__":
         output_dir=output_dir,
         task_formatter=config.task_formatter,
         agent_class=config.agent_class,
+        num_auditors=num_auditors,
     )
 
     # Evaluate and plot results

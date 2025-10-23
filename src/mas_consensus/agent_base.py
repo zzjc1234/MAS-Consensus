@@ -286,9 +286,13 @@ class AgentGraph:
             # Audit step
             if self.num_auditors > 0:
                 audit_threads = []
+                num_agents_to_audit = random.randint(1, len(self.agents))
+                print(
+                    f"Turn {turn_num}: Auditing {num_agents_to_audit} out of {len(self.agents)} agents"
+                )
                 agents_to_audit = random.sample(
-                    self.agents, k=min(len(self.agents), 3)
-                )  # Audit up to 3 agents
+                    self.agents, k=num_agents_to_audit
+                )  # Audit random number of agents
                 for agent_to_audit in agents_to_audit:
                     for auditor in (
                         self.auditor_agents
