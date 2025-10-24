@@ -1,3 +1,8 @@
+"""
+might be useless, only the evaluation can be used
+need to separate evaluation and experiment
+"""
+
 import numpy as np
 import os
 import argparse

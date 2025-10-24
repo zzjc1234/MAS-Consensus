@@ -1,3 +1,8 @@
+"""
+Might be useless since ./run_defense_comparison.py
+supports all topology
+"""
+
 import numpy as np
 import os
 import argparse
