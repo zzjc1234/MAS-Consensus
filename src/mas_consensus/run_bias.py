@@ -77,7 +77,7 @@ if __name__ == "__main__":
         help="Number of auditor agents (set to 0 to disable auditing). Default: 2",
     )
     parser.add_argument(
-        "--parallel", type=int, default=8, help="Number of parallel threads. Default: 8"
+        "--threads", type=int, default=8, help="Number of threads. Default: 8"
     )
     args = parser.parse_args()
 
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     graph_type = args.graph_type
     model = args.model
     json_format = False
-    p = args.parallel
+    p = args.threads
     reg_turn = args.reg_turn
     num_agents = args.num_agents
     num_auditors = args.num_auditors

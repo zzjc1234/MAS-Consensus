@@ -262,6 +262,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Only run evaluation on existing results.",
     )
+    parser.add_argument(
+        "--threads",
+        type=int,
+        default=16,
+        help="Number of threads. Default: 16",
+    )
 
     args = parser.parse_args()
 
@@ -274,7 +280,7 @@ if __name__ == "__main__":
     graph_type = "complete"
     model = "gpt-4o-mini"
     json_format = False
-    p = 16
+    p = args.threads
     reg_turn = args.reg_turn
     num_agents = args.num_agents
     num_auditors = args.num_auditors
