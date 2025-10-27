@@ -331,7 +331,7 @@ if __name__ == "__main__":
     graph_types = ["chain", "circle", "tree", "star", "complete"][-1:]
     agent_num = 6
     attacker_num = 5
-    dataset_path = f"./dataset/{dataset}.jsonl"
+    dataset_path = f"./src/dataset/{dataset}.jsonl"
     for graph_type in graph_types:
         print(f"Graph: {graph_type}_{agent_num}, Attacker Number: {attacker_num}")
         if "static" in evaluation:

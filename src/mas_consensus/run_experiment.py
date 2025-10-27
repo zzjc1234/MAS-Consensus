@@ -137,7 +137,7 @@ if __name__ == "__main__":
         malicious_auditor_idx = None
 
     # Create output directory
-    output_dir = f"./output/{args.model}/{args.dataset}/{args.sample_id}"
+    output_dir = f"./src/output/{args.model}/{args.dataset}/{args.sample_id}"
     os.makedirs(output_dir, exist_ok=True)
 
     # Run the experiment

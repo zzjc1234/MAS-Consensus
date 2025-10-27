@@ -257,7 +257,8 @@ class AgentGraph:
                 # Fallback: randomly select if not provided
                 self.auditor_indices = random.sample(range(num_agents), num_auditors)
             
-            print(f"Auditor indices from agent pool: {self.auditor_indices}")
+            # Auditor selection (commented out to reduce log noise)
+            # print(f"Auditor indices from agent pool: {self.auditor_indices}")
             
             # Create auditor agents from the selected indices
             self.auditor_agents = []
@@ -295,7 +296,7 @@ class AgentGraph:
         - Auditors audit and vote (don't answer questions)
         """
         # First generate - ONLY AGENTS answer questions
-        print(f"Agents ({len(self.agents)}) generating initial responses...")
+        # print(f"Agents ({len(self.agents)}) generating initial responses...")
         threads = []
         for i, agent in enumerate(self.agents):
             thread = threading.Thread(
@@ -308,7 +309,7 @@ class AgentGraph:
 
         # Re-generate for given number of turns - ONLY AGENTS participate
         for turn_num in range(turns):
-            print(f"\n=== Turn {turn_num + 1}/{turns} ===")
+            # print(f"\n=== Turn {turn_num + 1}/{turns} ===")
             self.voting_initiated_agents.clear()
             threads = []
             
@@ -336,9 +337,9 @@ class AgentGraph:
             if self.num_auditors > 0:
                 audit_threads = []
                 num_agents_to_audit = random.randint(1, len(self.agents))
-                print(
-                    f"Turn {turn_num}: Auditors ({len(self.auditor_agents)}) auditing {num_agents_to_audit} out of {len(self.agents)} agents"
-                )
+                # print(
+                #     f"Turn {turn_num}: Auditors ({len(self.auditor_agents)}) auditing {num_agents_to_audit} out of {len(self.agents)} agents"
+                # )
                 agents_to_audit = random.sample(
                     self.agents, k=num_agents_to_audit
                 )  # Audit random number of agents
