@@ -2,11 +2,11 @@
 Unified experiment runner - a thin wrapper around util.run_dataset()
 
 Node Architecture:
-  - Workers: Respond to questions and update their answers (don't vote)
-  - Auditors: Audit workers and vote (don't answer questions)
+  - Agents: Respond to questions and update their answers (don't vote)
+  - Auditors: Audit agents and vote (don't answer questions)
 
 Attack Types:
-  - Type 1: Malicious workers (give wrong answers)
+  - Type 1: Malicious agents (give wrong answers)
   - Type 2: Malicious auditors (audit and vote maliciously)
 
 All experiment logic is controlled through command-line arguments.
@@ -14,14 +14,18 @@ See EXPERIMENT_GUIDE.md for examples.
 """
 import os
 import argparse
+import random
 
 from . import util
 from . import experiment_config
 
+# Set random seed for reproducibility
+random.seed(42)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Run consensus experiments with separate worker and auditor nodes."
+        description="Run consensus experiments with separate agent and auditor nodes."
     )
     parser.add_argument(
         "--dataset",
@@ -39,13 +43,13 @@ if __name__ == "__main__":
         "--num_agents",
         type=int,
         required=True,
-        help="Number of worker agents (workers respond to questions, don't vote)",
+        help="Number of agents (agents respond to questions, don't vote)",
     )
     parser.add_argument(
         "--attacker_num",
         type=int,
         default=0,
-        help="Number of malicious workers (Type 1 attack: give wrong answers). Default: 0",
+        help="Number of malicious agents (Type 1 attack: give wrong answers). Default: 0",
     )
     parser.add_argument(
         "--malicious_auditor_num",
@@ -100,9 +104,25 @@ if __name__ == "__main__":
     # Get dataset-specific configuration
     config = experiment_config.get_dataset_config(args.dataset)
     
-    # Prepare attacker and auditor indices
+    # Prepare attacker indices (sequential from agents)
     attacker_idx = list(range(args.attacker_num))
-    malicious_auditor_idx = list(range(args.malicious_auditor_num)) if args.malicious_auditor_num > 0 else None
+    
+    # Prepare malicious auditor indices (random selection from all agents)
+    # Auditors are selected from the agent pool, so malicious auditor indices
+    # should be random unique numbers that don't exceed num_agents
+    if args.malicious_auditor_num > 0:
+        if args.malicious_auditor_num > args.num_auditors:
+            raise ValueError(
+                f"malicious_auditor_num ({args.malicious_auditor_num}) cannot exceed num_auditors ({args.num_auditors})"
+            )
+        if args.num_auditors > args.num_agents:
+            raise ValueError(
+                f"num_auditors ({args.num_auditors}) cannot exceed num_agents ({args.num_agents})"
+            )
+        # Randomly select which agents become malicious auditors
+        malicious_auditor_idx = random.sample(range(args.num_agents), args.malicious_auditor_num)
+    else:
+        malicious_auditor_idx = None
 
     # Create output directory
     output_dir = f"./output/{args.model}/{args.dataset}/{args.sample_id}"
@@ -110,8 +130,14 @@ if __name__ == "__main__":
 
     # Run the experiment
     print(f"Running experiment: dataset={args.dataset}, graph={args.graph_type}")
-    print(f"  Workers: {args.num_agents} total, {args.attacker_num} malicious (Type 1)")
-    print(f"  Auditors: {args.num_auditors} total, {args.malicious_auditor_num} malicious (Type 2)")
+    print(f"  Agents: {args.num_agents} total, {args.attacker_num} malicious at indices {attacker_idx} (Type 1)")
+    if args.num_auditors > 0:
+        if malicious_auditor_idx:
+            print(f"  Auditors: {args.num_auditors} total, {args.malicious_auditor_num} malicious at agent indices {malicious_auditor_idx} (Type 2)")
+        else:
+            print(f"  Auditors: {args.num_auditors} total, all honest")
+    else:
+        print(f"  Auditors: 0")
     
     util.run_dataset(
         ds_name=args.dataset,
