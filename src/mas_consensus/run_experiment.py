@@ -104,24 +104,36 @@ if __name__ == "__main__":
     # Get dataset-specific configuration
     config = experiment_config.get_dataset_config(args.dataset)
     
+    # Validation
+    if args.num_auditors > args.num_agents:
+        raise ValueError(
+            f"num_auditors ({args.num_auditors}) cannot exceed num_agents ({args.num_agents})"
+        )
+    if args.malicious_auditor_num > args.num_auditors:
+        raise ValueError(
+            f"malicious_auditor_num ({args.malicious_auditor_num}) cannot exceed num_auditors ({args.num_auditors})"
+        )
+    
     # Prepare attacker indices (sequential from agents)
     attacker_idx = list(range(args.attacker_num))
     
-    # Prepare malicious auditor indices (random selection from all agents)
-    # Auditors are selected from the agent pool, so malicious auditor indices
-    # should be random unique numbers that don't exceed num_agents
-    if args.malicious_auditor_num > 0:
-        if args.malicious_auditor_num > args.num_auditors:
-            raise ValueError(
-                f"malicious_auditor_num ({args.malicious_auditor_num}) cannot exceed num_auditors ({args.num_auditors})"
-            )
-        if args.num_auditors > args.num_agents:
-            raise ValueError(
-                f"num_auditors ({args.num_auditors}) cannot exceed num_agents ({args.num_agents})"
-            )
-        # Randomly select which agents become malicious auditors
-        malicious_auditor_idx = random.sample(range(args.num_agents), args.malicious_auditor_num)
+    # Prepare auditor selection:
+    # Step 1: Randomly select which agents become auditors
+    # Step 2: From those selected auditors, randomly choose which ones are malicious
+    if args.num_auditors > 0:
+        # Step 1: Randomly select auditor indices from agent pool
+        auditor_indices = random.sample(range(args.num_agents), args.num_auditors)
+        
+        # Step 2: From selected auditors, randomly choose which are malicious
+        if args.malicious_auditor_num > 0:
+            malicious_auditor_idx = random.sample(auditor_indices, args.malicious_auditor_num)
+        else:
+            malicious_auditor_idx = None
+        
+        # Pass auditor_indices to util.run_dataset
+        auditor_idx = auditor_indices
     else:
+        auditor_idx = None
         malicious_auditor_idx = None
 
     # Create output directory
@@ -132,10 +144,11 @@ if __name__ == "__main__":
     print(f"Running experiment: dataset={args.dataset}, graph={args.graph_type}")
     print(f"  Agents: {args.num_agents} total, {args.attacker_num} malicious at indices {attacker_idx} (Type 1)")
     if args.num_auditors > 0:
+        print(f"  Auditors: {args.num_auditors} selected from agent pool at indices {auditor_idx}")
         if malicious_auditor_idx:
-            print(f"  Auditors: {args.num_auditors} total, {args.malicious_auditor_num} malicious at agent indices {malicious_auditor_idx} (Type 2)")
+            print(f"    - {args.malicious_auditor_num} malicious auditors at agent indices {malicious_auditor_idx} (Type 2)")
         else:
-            print(f"  Auditors: {args.num_auditors} total, all honest")
+            print(f"    - All auditors honest")
     else:
         print(f"  Auditors: 0")
     
@@ -152,6 +165,7 @@ if __name__ == "__main__":
         agent_class=config.agent_class,
         task_formatter=config.task_formatter,
         num_auditors=args.num_auditors,
+        auditor_idx=auditor_idx,
         malicious_auditor_idx=malicious_auditor_idx,
         mode_suffix=args.output_suffix,
     )
