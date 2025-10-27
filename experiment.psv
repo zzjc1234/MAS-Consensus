@@ -1,4 +1,4 @@
-experiments|datasets|graphs|num-agents|attack_id|malicious_auditor_num|num-auditors|reg-turn|sample-id|threads|model|log-dir
+experiments|datasets|graphs|num-agents|attacker-num|malicious_auditor_num|num-auditors|reg-turn|sample-id|threads|model|log-dir
 defense_comparison|all|all|6|1|0|2|default|default|default|gpt-4o-mini|
 defense_comparison|all|all|10|1|0|2|default|default|default|gpt-4o-mini|
 defense_comparison|all|all|10|3|0|2|default|default|default|gpt-4o-mini|

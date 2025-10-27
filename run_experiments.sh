@@ -9,7 +9,7 @@ if [ ! -f experiment.psv ]; then
 fi
 
 # Read and execute experiments, skipping the header line
-tail -n +2 experiment.psv | while IFS='|' read -r experiments datasets graphs num_agents attack_id malicious_auditor_num num_auditors reg_turn sample_id threads model log_dir; do
+tail -n +2 experiment.psv | while IFS='|' read -r experiments datasets graphs num_agents attacker_num malicious_auditor_num num_auditors reg_turn sample_id threads model log_dir; do
     # Skip empty lines that might exist at the end of the file
     if [ -z "$experiments" ]; then
         continue
@@ -26,7 +26,7 @@ tail -n +2 experiment.psv | while IFS='|' read -r experiments datasets graphs nu
         --dataset $datasets \
         --graph_type $graphs \
         --num_agents $num_agents \
-        --attacker_num $attack_id \
+        --attacker_num $attacker_num \
         --malicious_auditor_num $malicious_auditor_num \
         --num_auditors $num_auditors \
         --reg_turn $reg_turn_val \
