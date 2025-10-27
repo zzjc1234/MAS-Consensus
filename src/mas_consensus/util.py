@@ -61,9 +61,10 @@ def run_dataset(
     task_formatter,
     num_auditors=0,
     malicious_auditor_idx=None,
+    mode_suffix="",
 ):
     adj_matrix = methods.generate_adj(num_agents, graph_type)
-    mode = f"{graph_type}_{num_agents}_{len(attacker_idx)}"
+    mode = f"{graph_type}_{num_agents}_{len(attacker_idx)}{mode_suffix}"
 
     if ds_name == "adv":
         system_prompt = prompts.discussion_prompt["system_prompt"]

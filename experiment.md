@@ -29,6 +29,4 @@ CHANGE!!! worker won't vote and auditor won't work. auditor only audit and vote.
 | defense_comparison | GSM8K    | all    | 6          | 0         | 1    | 2                                                                   | default  | default   | default      | default |
 | defense_comparison | GSM8K    | all    | 6          | 1         | 1    | 2                                                                   | default  | default   | default      | default | <!-- INFO: effciency, original system complete task vs. adding audition time (with attack and without attack) （最后做一个统计效率的实验：原系统完成任务的时间，加入审计后完成任务的时间。（无攻击状态与有攻击状态）做单个即可。实验图2）  -->                                                         |
 
-The last experiment: (6 agents, 1 error/fault) The accuracy of the responses from the individual intermediate agents with attack but without defense, and the accuracy of the responses from the individual intermediate agents after incorporating the defense mechanism. (Experimental Figure 1 (5 topologies)) (Plot line: Accuracy of all (6) agents without the defense mechanism, and the accuracy of all (6) agents after incorporating the defense mechanism). Only one dataset is needed.
-
-最后一个实验：（6智能体1错误）有攻击无防御的各个中间智能体回答的准确性和加入防御机制以后各个中间智能体回答的准确性。（实验图1（5个拓扑））（画线：不加防御机制所有（6个）智能体准确率，加入防御机制后所有（6个）智能体的准确率）做一个数据集即可。
+最后一个实验：（6智能体1错误）有攻击无防御的各个中间智能体回答的准确性和加入防御机制以后各个中间智能体回答的准确性。（实验图1（5个拓扑））（画线：不加防御机制所有（6个）智能体准确率，加入防御机制后所有（6个）智能体的准确率）做一个数据集即可。 再做一个多数投票baseline，首先：直接先生成问题答案，然后再判断，直接全体成员参与投票，而不是先部分审计，就是用来和我们方法做对比的不用（无防御，传统方法，我们的方法）。

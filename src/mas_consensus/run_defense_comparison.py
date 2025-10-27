@@ -21,6 +21,7 @@ def run_defense_comparison(
     agent_class,
     attacker_idx,
     num_auditors=2,
+    malicious_auditor_idx=None,
 ):
     """
     Run three scenarios: Baseline, Attacked, and Defended
@@ -85,7 +86,8 @@ def run_defense_comparison(
         agent_class=agent_class,
         task_formatter=task_formatter,
         num_auditors=num_auditors,  # Enable auditing
-        malicious_auditor_idx=None,  # Honest auditors in this scenario
+        malicious_auditor_idx=malicious_auditor_idx,
+        mode_suffix="_defended",
     )
 
     defended_output_path = f"{output_dir}/{ds_name}_{graph_type}_{num_agents}_{len(attacker_idx)}_defended.output"
@@ -221,10 +223,22 @@ if __name__ == "__main__":
         help="Dataset to use (e.g., csqa, gsm8k, fact, bias, adv), or 'all' to run all datasets. Default: csqa",
     )
     parser.add_argument(
+        "--graph_type",
+        type=str,
+        default="complete",
+        help="Graph topology to use, or 'all' to run all. Default: complete",
+    )
+    parser.add_argument(
         "--attacker_num",
         type=int,
         default=1,
         help="Number of malicious agents for the attacked/defended scenarios. Default: 1",
+    )
+    parser.add_argument(
+        "--malicious_auditor_num",
+        type=int,
+        default=0,
+        help="Number of malicious auditors for the defended scenario. Default: 0",
     )
     parser.add_argument(
         "--fast",
@@ -277,7 +291,6 @@ if __name__ == "__main__":
 
     # Define experiment parameters
     sample_id = args.sample_id
-    graph_type = "complete"
     model = "gpt-4o-mini"
     json_format = False
     p = args.threads
@@ -295,58 +308,71 @@ if __name__ == "__main__":
     else:
         datasets = [args.dataset]
 
+    if args.graph_type == "all":
+        graph_types = ["chain", "circle", "tree", "star", "complete"]
+    else:
+        graph_types = [args.graph_type]
+
     for ds_name in datasets:
-        print(f"--- Running experiment for dataset: {ds_name} ---")
-        # Get dataset-specific configuration
-        config = experiment_config.get_dataset_config(ds_name)
-        attacker_idx = list(range(args.attacker_num))
-
-        output_dir = f"./output/{model}/{ds_name}/{sample_id}"
-
-        if not args.evaluation_only:
-            print("Running simulation...")
-            os.makedirs(output_dir, exist_ok=True)
-            baseline_path, attacked_path, defended_path = run_defense_comparison(
-                ds_name=ds_name,
-                sample_id=sample_id,
-                graph_type=graph_type,
-                model=model,
-                p=p,
-                num_agents=num_agents,
-                json_format=json_format,
-                turn=reg_turn,
-                output_dir=output_dir,
-                task_formatter=config.task_formatter,
-                agent_class=config.agent_class,
-                attacker_idx=attacker_idx,
-                num_auditors=num_auditors,
+        for graph_type in graph_types:
+            print(
+                f"--- Running experiment for dataset: {ds_name}, graph: {graph_type} ---"
             )
-        else:
-            print("Skipping simulation. Assuming result files exist.")
-            baseline_path = f"{output_dir}/{ds_name}_{graph_type}_{num_agents}_0.output"
-            attacked_path = f"{output_dir}/{ds_name}_{graph_type}_{num_agents}_{args.attacker_num}.output"
-            defended_path = f"{output_dir}/{ds_name}_{graph_type}_{num_agents}_{args.attacker_num}_defended.output"
+            # Get dataset-specific configuration
+            config = experiment_config.get_dataset_config(ds_name)
+            attacker_idx = list(range(args.attacker_num))
+            malicious_auditor_idx = list(range(args.malicious_auditor_num))
 
-            if not all(
-                os.path.exists(p) for p in [baseline_path, attacked_path, defended_path]
-            ):
-                print(
-                    f"Error: Not all output files found in {output_dir} for dataset {ds_name}. Cannot run evaluation."
-                )
-                print(
-                    f"Missing one of: \n{baseline_path}\n{attacked_path}\n{defended_path}"
-                )
-                continue
+            output_dir = f"./output/{model}/{ds_name}/{sample_id}"
 
-        if not args.skip_evaluation:
-            print("Running evaluation...")
-            # Evaluate and plot results
-            dataset_path = f"./dataset/{ds_name}.jsonl"
-            evaluate_and_plot_comparison(
-                dataset_path=dataset_path,
-                baseline_output_path=baseline_path,
-                attacked_output_path=attacked_path,
-                defended_output_path=defended_path,
-                attacker_num=args.attacker_num,
-                evaluation_type="SAA",  # You can change to "MJA" for different evaluation
-            )
+            if not args.evaluation_only:
+                print("Running simulation...")
+                os.makedirs(output_dir, exist_ok=True)
+                baseline_path, attacked_path, defended_path = run_defense_comparison(
+                    ds_name=ds_name,
+                    sample_id=sample_id,
+                    graph_type=graph_type,
+                    model=model,
+                    p=p,
+                    num_agents=num_agents,
+                    json_format=json_format,
+                    turn=reg_turn,
+                    output_dir=output_dir,
+                    task_formatter=config.task_formatter,
+                    agent_class=config.agent_class,
+                    attacker_idx=attacker_idx,
+                    num_auditors=num_auditors,
+                    malicious_auditor_idx=malicious_auditor_idx,
+                )
+            else:
+                print("Skipping simulation. Assuming result files exist.")
+                baseline_path = (
+                    f"{output_dir}/{ds_name}_{graph_type}_{num_agents}_0.output"
+                )
+                attacked_path = f"{output_dir}/{ds_name}_{graph_type}_{num_agents}_{args.attacker_num}.output"
+                defended_path = f"{output_dir}/{ds_name}_{graph_type}_{num_agents}_{args.attacker_num}_defended.output"
+
+                if not all(
+                    os.path.exists(p)
+                    for p in [baseline_path, attacked_path, defended_path]
+                ):
+                    print(
+                        f"Error: Not all output files found in {output_dir} for dataset {ds_name} and graph {graph_type}. Cannot run evaluation."
+                    )
+                    print(
+                        f"Missing one of: \n{baseline_path}\n{attacked_path}\n{defended_path}"
+                    )
+                    continue
+
+            if not args.skip_evaluation:
+                print("Running evaluation...")
+                # Evaluate and plot results
+                dataset_path = f"./dataset/{ds_name}.jsonl"
+                evaluate_and_plot_comparison(
+                    dataset_path=dataset_path,
+                    baseline_output_path=baseline_path,
+                    attacked_output_path=attacked_path,
+                    defended_output_path=defended_path,
+                    attacker_num=args.attacker_num,
+                    evaluation_type="SAA",  # You can change to "MJA" for different evaluation
+                )

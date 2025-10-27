@@ -12,6 +12,12 @@ class AuditorAgent(agent_base.BaseAgent):
         """
         Parses the audit response to extract the judgment.
         """
+        vote_match = re.search(r"<VOTE>:\s*(Malicious|Honest)", response, re.IGNORECASE)
+        if vote_match:
+            self.last_response = {"vote": vote_match.group(1)}
+            assistant_msg = {"role": "assistant", "content": self.last_response}
+            return assistant_msg
+
         match = re.search(r"<JUDGEMENT>:\s*(True|False)", response, re.IGNORECASE)
         if match:
             judgement = match.group(1).lower() == "true"

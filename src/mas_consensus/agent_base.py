@@ -245,6 +245,7 @@ class AgentGraph:
                 if i in self.malicious_auditor_idx
                 else prompts.discussion_prompt["auditor_system_prompt"],
                 model_type,
+                is_malicious=(i in self.malicious_auditor_idx),
             )
             for i in range(num_auditors)
         ]
@@ -329,7 +330,7 @@ class AgentGraph:
         from . import prompts
 
         votes = []
-        voters = [agent for agent in self.agents if agent.idx != agent_to_vote_on.idx]
+        voters = self.auditor_agents
         original_prompts = {agent.idx: agent.dialogue[0] for agent in voters}
 
         for voter in voters:
