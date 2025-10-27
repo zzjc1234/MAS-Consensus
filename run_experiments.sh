@@ -58,11 +58,11 @@ tail -n +2 experiment.psv | while IFS='|' read -r datasets graphs num_agents att
     for dataset in $dataset_list; do
         for graph in $graph_list; do
             
-            # BASELINE: Workers only, no attacks, no auditors
+            # BASELINE: Honest agents only, no attacks, no auditors
             if [ "$run_baseline" == "1" ]; then
                 echo "======================================================================"
                 echo "BASELINE: dataset=$dataset, graph=$graph"
-                echo "  Workers: $num_agents (all honest)"
+                echo "  Agents: $num_agents (all honest)"
                 echo "  Auditors: 0"
                 echo "======================================================================"
                 
@@ -79,12 +79,12 @@ tail -n +2 experiment.psv | while IFS='|' read -r datasets graphs num_agents att
                     --model "$model_val"
             fi
             
-            # TYPE 1 ATTACK: Workers (some malicious) + auditors (all honest)
-            # Type 1 attack: malicious workers give wrong answers
+            # TYPE 1 ATTACK: Agents (some malicious) + auditors (all honest)
+            # Type 1 attack: malicious agents give wrong answers
             if [ "$type_one_attack" == "1" ]; then
                 echo "======================================================================"
                 echo "TYPE 1 ATTACK: dataset=$dataset, graph=$graph"
-                echo "  Workers: $num_agents ($attacker_num_val malicious - Type 1 attack)"
+                echo "  Agents: $num_agents ($attacker_num_val malicious - Type 1 attack)"
                 echo "  Auditors: $num_auditors_val (all honest - defending)"
                 echo "======================================================================"
                 
@@ -102,12 +102,12 @@ tail -n +2 experiment.psv | while IFS='|' read -r datasets graphs num_agents att
                     --output_suffix "_type1"
             fi
             
-            # TYPE 2 ONLY: Honest workers + malicious auditors
+            # TYPE 2 ONLY: Honest agents + malicious auditors
             # Type 2 attack only: malicious auditors (audit + vote maliciously)
             if [ "$type_two_attack" == "1" ]; then
                 echo "======================================================================"
                 echo "TYPE 2 ATTACK: dataset=$dataset, graph=$graph"
-                echo "  Workers: $num_agents (all honest)"
+                echo "  Agents: $num_agents (all honest)"
                 echo "  Auditors: $num_auditors_val ($malicious_auditor_num_val malicious - Type 2 attack)"
                 echo "======================================================================"
                 
@@ -125,13 +125,13 @@ tail -n +2 experiment.psv | while IFS='|' read -r datasets graphs num_agents att
                     --output_suffix "_type2"
             fi
             
-            # BOTH ATTACKS: Malicious workers + malicious auditors
-            # Type 1 attack: malicious workers
+            # BOTH ATTACKS: Malicious agents + malicious auditors
+            # Type 1 attack: malicious agents
             # Type 2 attack: malicious auditors
             if [ "$both_attacks" == "1" ]; then
                 echo "======================================================================"
                 echo "BOTH ATTACKS: dataset=$dataset, graph=$graph"
-                echo "  Workers: $num_agents ($attacker_num_val malicious - Type 1 attack)"
+                echo "  Agents: $num_agents ($attacker_num_val malicious - Type 1 attack)"
                 echo "  Auditors: $num_auditors_val ($malicious_auditor_num_val malicious - Type 2 attack)"
                 echo "======================================================================"
                 

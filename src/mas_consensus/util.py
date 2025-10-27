@@ -21,6 +21,7 @@ def _process_item(
     agent_class,
     task_formatter,
     num_auditors,
+    auditor_idx,
     malicious_auditor_idx,
 ):
     tasks, task_id = task_formatter(data, attacker_idx, num_agents)
@@ -39,6 +40,7 @@ def _process_item(
         agent_class,
         model,
         num_auditors=num_auditors,
+        auditor_idx=auditor_idx,
         attacker_idx=attacker_idx,
         malicious_auditor_idx=malicious_auditor_idx,
     )
@@ -60,6 +62,7 @@ def run_dataset(
     agent_class,
     task_formatter,
     num_auditors=0,
+    auditor_idx=None,
     malicious_auditor_idx=None,
     mode_suffix="",
 ):
@@ -98,6 +101,7 @@ def run_dataset(
                 agent_class,
                 task_formatter,
                 num_auditors,
+                auditor_idx,
                 malicious_auditor_idx,
             ),
         )
