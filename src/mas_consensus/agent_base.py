@@ -194,6 +194,12 @@ class SimpleAgent(BaseAgent):
 class AgentGraph:
     """
     Manages a graph of agents and their interactions.
+    
+    Architecture:
+    - Workers: Answer questions and update responses (don't vote)
+    - Auditors: Audit and vote (don't answer questions)
+    
+    Auditors are selected from the total agent pool before turns start.
     """
 
     def __init__(
@@ -206,12 +212,16 @@ class AgentGraph:
         agent_class,
         model_type="gpt-3.5-turbo",
         num_auditors=0,
+        auditor_idx=None,
         attacker_idx=None,
         malicious_auditor_idx=None,
     ):
         assert len(system_prompts) == num_agents
         assert len(adj_matrix) == num_agents
         assert len(adj_matrix[0]) == num_agents
+        
+        from . import defense, prompts
+
         self.num_agents = num_agents
         self.adj_matrix = adj_matrix
         self.tasks = tasks
@@ -220,10 +230,13 @@ class AgentGraph:
         self.malicious_auditor_idx = (
             malicious_auditor_idx if malicious_auditor_idx is not None else []
         )
-        from . import defense, prompts
-
         self.standard_system_prompt = prompts.discussion_prompt["system_prompt"]
-        self.agents = [
+        self.num_auditors = num_auditors
+        self.voting_lock = threading.Lock()
+        self.voting_initiated_agents = set()
+        
+        # Create all agents initially
+        all_agents = [
             agent_class(
                 i,
                 f"You are Agent_{i}. Always keep this role in mind.\n"
@@ -233,24 +246,57 @@ class AgentGraph:
             )
             for i in range(num_agents)
         ]
-        self.record = {"task_id": task_id, "audit_results": [], "voting_results": []}
-        self.num_auditors = num_auditors
-        self.voting_lock = threading.Lock()
-        self.voting_initiated_agents = set()
-
-        self.auditor_agents = [
-            defense.AuditorAgent(
-                i,
-                prompts.discussion_prompt["malicious_auditor_system_prompt"]
-                if i in self.malicious_auditor_idx
-                else prompts.discussion_prompt["auditor_system_prompt"],
-                model_type,
-            )
-            for i in range(num_auditors)
-        ]
+        
+        # Select auditors from the agent pool
+        # Auditors are selected before turns start and become separate oversight nodes
+        if num_auditors > 0:
+            # Use provided auditor indices (already randomly selected by caller)
+            if auditor_idx is not None:
+                self.auditor_indices = auditor_idx
+            else:
+                # Fallback: randomly select if not provided
+                self.auditor_indices = random.sample(range(num_agents), num_auditors)
+            
+            # Auditor selection (commented out to reduce log noise)
+            # print(f"Auditor indices from agent pool: {self.auditor_indices}")
+            
+            # Create auditor agents from the selected indices
+            self.auditor_agents = []
+            for aud_idx in self.auditor_indices:
+                auditor = defense.AuditorAgent(
+                    aud_idx,
+                    prompts.discussion_prompt["malicious_auditor_system_prompt"]
+                    if aud_idx in self.malicious_auditor_idx
+                    else prompts.discussion_prompt["auditor_system_prompt"],
+                    model_type,
+                    is_malicious=(aud_idx in self.malicious_auditor_idx),
+                )
+                self.auditor_agents.append(auditor)
+            
+            # Remove selected auditors from the agent pool (they only audit, don't answer)
+            self.agents = [agent for i, agent in enumerate(all_agents) if i not in self.auditor_indices]
+        else:
+            self.auditor_indices = []
+            self.auditor_agents = []
+            self.agents = all_agents
+        
+        self.record = {
+            "task_id": task_id,
+            "auditor_indices": self.auditor_indices,
+            "audit_results": [],
+            "voting_results": []
+        }
 
     def run(self, turns):
-        # First generate
+        """
+        Run the consensus process.
+        
+        Architecture:
+        - Agents answer questions and discuss (don't vote)
+        - Auditors audit and vote (don't answer questions)
+        """
+        # First generate - ONLY AGENTS answer questions
+        # print(f"Agents ({len(self.agents)}) generating initial responses...")
         threads = []
         for i, agent in enumerate(self.agents):
             thread = threading.Thread(
@@ -261,15 +307,19 @@ class AgentGraph:
         for thread in threads:
             thread.join()
 
-        # Re-generate for given number of turns
+        # Re-generate for given number of turns - ONLY AGENTS participate
         for turn_num in range(turns):
+            # print(f"\n=== Turn {turn_num + 1}/{turns} ===")
             self.voting_initiated_agents.clear()
             threads = []
+            
+            # Only agents re-generate (auditors don't participate in discussion)
             for i, agent in enumerate(self.agents):
+                # Get neighbors from agents only (not auditors)
                 neighbors = [
                     self.agents[j]
                     for j, conn in enumerate(self.adj_matrix[i])
-                    if conn == 1
+                    if conn == 1 and j < len(self.agents)
                 ]
                 thread = threading.Thread(
                     target=agent.re_generate,
@@ -283,13 +333,13 @@ class AgentGraph:
             for thread in threads:
                 thread.join()
 
-            # Audit step
+            # Audit step - Auditors audit agents (not each other)
             if self.num_auditors > 0:
                 audit_threads = []
                 num_agents_to_audit = random.randint(1, len(self.agents))
-                print(
-                    f"Turn {turn_num}: Auditing {num_agents_to_audit} out of {len(self.agents)} agents"
-                )
+                # print(
+                #     f"Turn {turn_num}: Auditors ({len(self.auditor_agents)}) auditing {num_agents_to_audit} out of {len(self.agents)} agents"
+                # )
                 agents_to_audit = random.sample(
                     self.agents, k=num_agents_to_audit
                 )  # Audit random number of agents
@@ -329,7 +379,7 @@ class AgentGraph:
         from . import prompts
 
         votes = []
-        voters = [agent for agent in self.agents if agent.idx != agent_to_vote_on.idx]
+        voters = self.auditor_agents
         original_prompts = {agent.idx: agent.dialogue[0] for agent in voters}
 
         for voter in voters:
@@ -385,8 +435,13 @@ class AgentGraph:
             )
 
     def save(self, output_path, format):
+        # Save agents (those who answer questions)
         for i, agent in enumerate(self.agents):
             self.record[f"Agent_{i}"] = agent.dialogue
+        
+        # Save auditor agents (those who audit and vote)
+        for i, auditor in enumerate(self.auditor_agents):
+            self.record[f"Auditor_{i}"] = auditor.dialogue
 
         with write_lock:
             methods.create_file(output_path)
@@ -399,13 +454,26 @@ class AgentGraph:
                     f.write(str(self.record) + "\n")
 
     def display_dialogues(self, roles):
+        print("\n=== AGENTS ===")
         for agent in self.agents:
             print("*" * 100)
             agent.display_dialogue(roles)
+        
+        if self.auditor_agents:
+            print("\n=== AUDITORS ===")
+            for auditor in self.auditor_agents:
+                print("*" * 100)
+                auditor.display_dialogue(roles)
 
     def display_dialogues_turn(self, roles, turn):
         for i in range(turn):
             print("*" * 100)
             print(f"Turn{i}:")
+            print("\n--- Agents ---")
             for agent in self.agents:
                 agent.display_dialogue_idx(roles, i)
+            
+            if self.auditor_agents:
+                print("\n--- Auditors ---")
+                for auditor in self.auditor_agents:
+                    auditor.display_dialogue_idx(roles, i)

@@ -367,7 +367,7 @@ if __name__ == "__main__":
     agent_num = 6
     attacker_nums = [5]
     attacker_num = 5
-    dataset_path = f"./dataset/{dataset}.jsonl"
+    dataset_path = f"./src/dataset/{dataset}.jsonl"
     if "SAA" in evaluation:
         for graph_type in graph_types:
             print(f"Graph: {graph_type}_{agent_num}, Attacker Number: {attacker_num}")

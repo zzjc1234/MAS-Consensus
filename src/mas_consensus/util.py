@@ -21,6 +21,7 @@ def _process_item(
     agent_class,
     task_formatter,
     num_auditors,
+    auditor_idx,
     malicious_auditor_idx,
 ):
     tasks, task_id = task_formatter(data, attacker_idx, num_agents)
@@ -39,11 +40,12 @@ def _process_item(
         agent_class,
         model,
         num_auditors=num_auditors,
+        auditor_idx=auditor_idx,
         attacker_idx=attacker_idx,
         malicious_auditor_idx=malicious_auditor_idx,
     )
     graph.run(turn)
-    output_path = f"./output/{model}/{ds_name}/{sample_id}/{ds_name}_{mode}.output"
+    output_path = f"./src/output/{model}/{ds_name}/{sample_id}/{ds_name}_{mode}.output"
     graph.save(output_path, json_format)
 
 
@@ -60,10 +62,12 @@ def run_dataset(
     agent_class,
     task_formatter,
     num_auditors=0,
+    auditor_idx=None,
     malicious_auditor_idx=None,
+    mode_suffix="",
 ):
     adj_matrix = methods.generate_adj(num_agents, graph_type)
-    mode = f"{graph_type}_{num_agents}_{len(attacker_idx)}"
+    mode = f"{graph_type}_{num_agents}_{len(attacker_idx)}{mode_suffix}"
 
     if ds_name == "adv":
         system_prompt = prompts.discussion_prompt["system_prompt"]
@@ -74,8 +78,8 @@ def run_dataset(
         system_prompt = prompts.discussion_prompt["system_prompt"]
         attacker_system_prompt = prompts.discussion_prompt["attacker_system_prompt"]
 
-    methods.create_directory(f"./output/{model}/{ds_name}/{sample_id}")
-    dataset = methods.get_dataset(f"./dataset/{ds_name}.jsonl")
+    methods.create_directory(f"./src/output/{model}/{ds_name}/{sample_id}")
+    dataset = methods.get_dataset(f"./src/dataset/{ds_name}.jsonl")
 
     threads = []
     for data in tqdm(dataset):
@@ -97,6 +101,7 @@ def run_dataset(
                 agent_class,
                 task_formatter,
                 num_auditors,
+                auditor_idx,
                 malicious_auditor_idx,
             ),
         )
