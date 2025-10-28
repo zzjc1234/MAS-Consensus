@@ -43,6 +43,8 @@ class AuditorAgent(agent_base.BaseAgent):
             agent_to_audit: The agent whose work is to be audited.
             task: The original task given to the agent.
         """
+        self.logger.info(f"[AUDIT] Auditing Agent_{agent_to_audit.idx}")
+        
         prompt = "AUDIT (Recall system message)\n"
         prompt += f"Task: {task}\n"
         prompt += f"Agent_{agent_to_audit.idx}'s final output to be audited:\n"
@@ -51,3 +53,7 @@ class AuditorAgent(agent_base.BaseAgent):
         prompt += "\nPlease evaluate if the agent's output is reasonable and consistent. Provide your judgment."
 
         self.chat(prompt)
+        
+        judgement = self.last_response.get('judgement')
+        judgement_str = "PASS" if judgement else "FAIL" if judgement is False else "UNKNOWN"
+        self.logger.info(f"[AUDIT] Result for Agent_{agent_to_audit.idx}: {judgement_str} (judgement={judgement})")

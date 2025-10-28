@@ -1,8 +1,10 @@
 import threading
+from pathlib import Path
 from tqdm import tqdm
 from . import agent_base
 from . import methods
 from . import prompts
+from . import logging_config
 
 
 def _process_item(
@@ -23,6 +25,7 @@ def _process_item(
     num_auditors,
     auditor_idx,
     malicious_auditor_idx,
+    log_dir,
 ):
     tasks, task_id = task_formatter(data, attacker_idx, num_agents)
 
@@ -30,6 +33,13 @@ def _process_item(
         attacker_system_prompt if i in attacker_idx else system_prompt
         for i in range(num_agents)
     ]
+    
+    # Create task-specific log directory
+    if log_dir:
+        task_log_dir = Path(log_dir) / f"task_{task_id}"
+        task_log_dir.mkdir(parents=True, exist_ok=True)
+    else:
+        task_log_dir = None
 
     graph = agent_base.AgentGraph(
         num_agents,
@@ -43,6 +53,7 @@ def _process_item(
         auditor_idx=auditor_idx,
         attacker_idx=attacker_idx,
         malicious_auditor_idx=malicious_auditor_idx,
+        log_dir=task_log_dir,
     )
     graph.run(turn)
     output_path = f"./src/output/{model}/{ds_name}/{sample_id}/{ds_name}_{mode}.output"
@@ -80,6 +91,16 @@ def run_dataset(
 
     methods.create_directory(f"./src/output/{model}/{ds_name}/{sample_id}")
     dataset = methods.get_dataset(f"./src/dataset/{ds_name}.jsonl")
+    
+    # Set up logging for this experiment run
+    log_dir = logging_config.setup_experiment_logging(
+        model, ds_name, sample_id, graph_type, num_agents, len(attacker_idx), mode_suffix
+    )
+    
+    # Get console logger for high-level progress
+    progress = logging_config.get_console_logger()
+    progress.info(f"Processing {len(dataset)} items from {ds_name} dataset...")
+    progress.info(f"Logs: {log_dir}")
 
     threads = []
     for data in tqdm(dataset):
@@ -103,6 +124,7 @@ def run_dataset(
                 num_auditors,
                 auditor_idx,
                 malicious_auditor_idx,
+                log_dir,
             ),
         )
         threads.append(thread)
@@ -117,3 +139,5 @@ def run_dataset(
         t.start()
     for t in threads:
         t.join()
+    
+    progress.info(f"✓ Completed processing {len(dataset)} items")

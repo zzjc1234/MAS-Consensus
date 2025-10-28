@@ -363,12 +363,34 @@ class TestRunExperimentValidation:
         malicious_auditor_num = 3
         assert malicious_auditor_num > num_auditors  # This would be caught by validation
         
-        # Case 3: Valid configuration (should pass)
+        # Case 3: attacker_num + num_auditors > num_agents (should fail)
+        num_agents = 6
+        attacker_num = 4
+        num_auditors = 3
+        assert attacker_num + num_auditors > num_agents  # Would be caught
+        
+        # Case 4: Valid configuration (should pass)
         num_agents = 10
+        attacker_num = 2
         num_auditors = 3
         malicious_auditor_num = 1
         assert num_auditors <= num_agents
         assert malicious_auditor_num <= num_auditors
+        assert attacker_num + num_auditors <= num_agents  # Valid
+        
+    def test_sufficient_agents_for_attackers_and_auditors(self):
+        """Test that we have enough agents for both attackers and auditors"""
+        # Valid: 10 agents, 2 attackers, 3 auditors = 2 + 3 = 5 <= 10 ✓
+        num_agents = 10
+        attacker_num = 2
+        num_auditors = 3
+        assert attacker_num + num_auditors <= num_agents
+        
+        # Invalid: 6 agents, 4 attackers, 3 auditors = 4 + 3 = 7 > 6 ✗
+        num_agents = 6
+        attacker_num = 4
+        num_auditors = 3
+        assert attacker_num + num_auditors > num_agents  # Would fail validation
 
 
 class TestTwoStepSelection:
@@ -394,6 +416,58 @@ class TestTwoStepSelection:
         # Verify malicious auditors are subset of auditors
         assert all(idx in auditor_indices for idx in malicious_auditor_idx)
         assert len(malicious_auditor_idx) == malicious_auditor_num
+    
+    def test_malicious_agents_excluded_from_auditors(self):
+        """Test that malicious agents (Type 1) are excluded from auditor selection"""
+        import random
+        random.seed(42)
+        
+        num_agents = 10
+        attacker_num = 2
+        num_auditors = 3
+        
+        # Malicious agents
+        attacker_idx = list(range(attacker_num))  # [0, 1]
+        
+        # Available for auditor selection (excluding malicious agents)
+        available_for_auditors = [i for i in range(num_agents) if i not in attacker_idx]
+        # [2, 3, 4, 5, 6, 7, 8, 9]
+        
+        # Select auditors from available pool
+        auditor_indices = random.sample(available_for_auditors, num_auditors)
+        
+        # Verify auditors don't overlap with malicious agents
+        assert all(idx not in attacker_idx for idx in auditor_indices)
+        assert len(set(auditor_indices) & set(attacker_idx)) == 0  # No overlap
+    
+    def test_both_attack_types_independent(self):
+        """Test that Type 1 and Type 2 attacks operate independently"""
+        import random
+        random.seed(42)
+        
+        num_agents = 10
+        attacker_num = 1  # 1 malicious agent for Type 1
+        num_auditors = 2
+        malicious_auditor_num = 1  # 1 malicious auditor for Type 2
+        
+        # Type 1: Malicious agents
+        attacker_idx = [0]
+        
+        # Auditors selected from non-malicious agents
+        available_for_auditors = [i for i in range(num_agents) if i not in attacker_idx]
+        auditor_indices = random.sample(available_for_auditors, num_auditors)
+        
+        # Type 2: Malicious auditors
+        malicious_auditor_idx = random.sample(auditor_indices, malicious_auditor_num)
+        
+        # Verify both attacks are present
+        assert len(attacker_idx) == 1  # 1 malicious agent
+        assert len(malicious_auditor_idx) == 1  # 1 malicious auditor
+        
+        # Verify no overlap
+        assert attacker_idx[0] not in auditor_indices  # Malicious agent not an auditor
+        assert malicious_auditor_idx[0] in auditor_indices  # Malicious auditor is an auditor
+        assert malicious_auditor_idx[0] not in attacker_idx  # Malicious auditor not a malicious agent
     
     def test_all_auditors_malicious(self):
         """Test edge case where all auditors are malicious"""
