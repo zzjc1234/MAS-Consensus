@@ -38,3 +38,5 @@ To run current code, go to src and run
 ```bash
 python3 -m mas_consensus.run
 ```
+
+See `docs/experiment_guide.md` for experiment runner details.
