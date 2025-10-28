@@ -18,9 +18,13 @@ import random
 
 from . import util
 from . import experiment_config
+from . import logging_config
 
 # Set random seed for reproducibility
 random.seed(42)
+
+# Get console logger for high-level progress
+progress_logger = logging_config.get_console_logger()
 
 
 if __name__ == "__main__":
@@ -113,16 +117,35 @@ if __name__ == "__main__":
         raise ValueError(
             f"malicious_auditor_num ({args.malicious_auditor_num}) cannot exceed num_auditors ({args.num_auditors})"
         )
+    if args.attacker_num + args.num_auditors > args.num_agents:
+        raise ValueError(
+            f"attacker_num ({args.attacker_num}) + num_auditors ({args.num_auditors}) = {args.attacker_num + args.num_auditors} "
+            f"cannot exceed num_agents ({args.num_agents}). "
+            f"Malicious agents must remain in discussion, and auditors are selected from remaining agents."
+        )
     
-    # Prepare attacker indices (sequential from agents)
-    attacker_idx = list(range(args.attacker_num))
+    # Prepare attacker indices (randomly select malicious agents)
+    if args.attacker_num > 0:
+        attacker_idx = random.sample(range(args.num_agents), args.attacker_num)
+    else:
+        attacker_idx = []
     
     # Prepare auditor selection:
-    # Step 1: Randomly select which agents become auditors
+    # Step 1: Randomly select which agents become auditors (excluding malicious agents)
     # Step 2: From those selected auditors, randomly choose which ones are malicious
     if args.num_auditors > 0:
-        # Step 1: Randomly select auditor indices from agent pool
-        auditor_indices = random.sample(range(args.num_agents), args.num_auditors)
+        # Malicious agents (attacker_idx) must remain in discussion, so exclude them from auditor selection
+        # Available agents for auditor selection = all agents except malicious ones
+        available_for_auditors = [i for i in range(args.num_agents) if i not in attacker_idx]
+        
+        if len(available_for_auditors) < args.num_auditors:
+            raise ValueError(
+                f"Cannot select {args.num_auditors} auditors from {len(available_for_auditors)} available agents "
+                f"(excluding {args.attacker_num} malicious agents that must remain in discussion)"
+            )
+        
+        # Step 1: Randomly select auditor indices from available agents (not including attackers)
+        auditor_indices = random.sample(available_for_auditors, args.num_auditors)
         
         # Step 2: From selected auditors, randomly choose which are malicious
         if args.malicious_auditor_num > 0:
@@ -130,27 +153,60 @@ if __name__ == "__main__":
         else:
             malicious_auditor_idx = None
         
+        # Verify constraint: auditor indices must not overlap with attacker indices
+        overlap = set(auditor_indices) & set(attacker_idx)
+        if overlap:
+            raise ValueError(
+                f"Internal error: Auditors {overlap} overlap with malicious agents! "
+                "Malicious agents must stay in discussion."
+            )
+        
+        # Verify malicious auditors are subset of auditors
+        if malicious_auditor_idx:
+            if not set(malicious_auditor_idx).issubset(set(auditor_indices)):
+                raise ValueError(
+                    f"Internal error: Malicious auditors {malicious_auditor_idx} not subset of auditors {auditor_indices}"
+                )
+        
         # Pass auditor_indices to util.run_dataset
         auditor_idx = auditor_indices
     else:
         auditor_idx = None
         malicious_auditor_idx = None
+    
+    # Final validation: Ensure we have the expected configuration
+    if args.attacker_num > 0:
+        # Verify malicious agents will be in discussion (not in auditor group)
+        if auditor_idx and any(idx in auditor_idx for idx in attacker_idx):
+            raise ValueError(
+                f"Configuration error: Malicious agents {attacker_idx} cannot be auditors. "
+                "They must remain in discussion group to execute Type 1 attack."
+            )
 
     # Create output directory
     output_dir = f"./src/output/{args.model}/{args.dataset}/{args.sample_id}"
     os.makedirs(output_dir, exist_ok=True)
 
     # Run the experiment
-    print(f"Running experiment: dataset={args.dataset}, graph={args.graph_type}")
-    print(f"  Agents: {args.num_agents} total, {args.attacker_num} malicious at indices {attacker_idx} (Type 1)")
-    if args.num_auditors > 0:
-        print(f"  Auditors: {args.num_auditors} selected from agent pool at indices {auditor_idx}")
-        if malicious_auditor_idx:
-            print(f"    - {args.malicious_auditor_num} malicious auditors at agent indices {malicious_auditor_idx} (Type 2)")
-        else:
-            print(f"    - All auditors honest")
+    progress_logger.info("=" * 80)
+    progress_logger.info(f"EXPERIMENT: {args.dataset}/{args.graph_type}")
+    progress_logger.info(f"  Total agents: {args.num_agents}")
+    if args.attacker_num > 0:
+        progress_logger.info(f"  Malicious agents (Type 1): {args.attacker_num} randomly selected at {attacker_idx} → DISCUSSION")
     else:
-        print(f"  Auditors: 0")
+        progress_logger.info(f"  Malicious agents (Type 1): 0 - all honest")
+    
+    if args.num_auditors > 0:
+        progress_logger.info(f"  Auditors: {args.num_auditors} randomly selected from non-malicious agents at {auditor_idx} → AUDIT & VOTE")
+        if malicious_auditor_idx:
+            progress_logger.info(f"    - Malicious auditors (Type 2): {args.malicious_auditor_num} at {malicious_auditor_idx}")
+        else:
+            progress_logger.info(f"    - All auditors honest")
+    else:
+        progress_logger.info(f"  Auditors: 0")
+    
+    progress_logger.info(f"  Discussion group: {args.num_agents - args.num_auditors} agents")
+    progress_logger.info("=" * 80)
     
     util.run_dataset(
         ds_name=args.dataset,
@@ -172,4 +228,5 @@ if __name__ == "__main__":
 
     # Compute and display output path
     output_path = f"{output_dir}/{args.dataset}_{args.graph_type}_{args.num_agents}_{args.attacker_num}{args.output_suffix}.output"
-    print(f"Experiment completed. Output saved to: {output_path}")
+    progress_logger.info(f"✓ Experiment completed. Output: {output_path}")
+    progress_logger.info("")

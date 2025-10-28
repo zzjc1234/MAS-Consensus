@@ -21,10 +21,22 @@ def create_file(path):
 
 
 def generate_adj(n, graph_type):
+    """
+    Generate adjacency matrix for different graph topologies.
+    
+    Args:
+        n: Number of nodes
+        graph_type: Type of graph (complete, tree, chain, star, circle)
+    
+    Returns:
+        Adjacency matrix as numpy array
+    """
+    adj_matrix = None
+    
     if "complete" in graph_type:
         adj_matrix = np.ones((n, n), dtype=int)
         np.fill_diagonal(adj_matrix, 0)
-    if "tree" in graph_type:
+    elif "tree" in graph_type:
         adj_matrix = np.zeros((n, n), dtype=int)
         for i in range(n):
             left_child = 2 * i + 1
@@ -36,13 +48,13 @@ def generate_adj(n, graph_type):
             if right_child < n:
                 adj_matrix[i][right_child] = 1
                 adj_matrix[right_child][i] = 1
-    if "chain" in graph_type:
+    elif "chain" in graph_type:
         adj_matrix = np.zeros((n, n), dtype=int)
         # Set the values for a chain structure
         for i in range(n - 1):
             adj_matrix[i, i + 1] = 1
             adj_matrix[i + 1, i] = 1
-    if "star" in graph_type:
+    elif "star" in graph_type:
         adj_matrix = np.zeros((n, n), dtype=int)
         for i in range(1, n):
             adj_matrix[0][i] = 1
@@ -52,11 +64,14 @@ def generate_adj(n, graph_type):
             adj_matrix[i + 1][i] = 1
         adj_matrix[1][n - 1] = 1
         adj_matrix[n - 1][1] = 1
-    if "circle" in graph_type:
+    elif "circle" in graph_type:
         adj_matrix = np.zeros((n, n), dtype=int)
         for i in range(n):
             adj_matrix[i][(i + 1) % n] = 1
             adj_matrix[(i + 1) % n][i] = 1
+    else:
+        raise ValueError(f"Unknown graph type: {graph_type}. Valid types: complete, tree, chain, star, circle")
+    
     return adj_matrix
 
 
