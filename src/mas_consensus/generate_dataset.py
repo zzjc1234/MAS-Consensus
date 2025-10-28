@@ -11,8 +11,8 @@ random.seed(42)
 def generate_dataset(dataset_name, dataset_path, sample_num=None):
     ds = load_dataset(*dataset_path)
     ds_total = []
-    methods.create_directory("./dataset")
-    save_path = f"./dataset/{dataset_name}.jsonl"
+    methods.create_directory("./src/dataset")
+    save_path = f"./src/dataset/{dataset_name}.jsonl"
     for key in ds.keys():
         for item in ds[key]:
             ds_total.append(item)
@@ -167,9 +167,9 @@ def generate_gsm8k_answer(input_path, output_path):
 
 if __name__ == "__main__":
     generate_dataset("csqa", ["tau/commonsense_qa"], 127)
-    # generate_dataset_math("./dataset/math.jsonl", 67)
-    # generate_math_error("./dataset/math.jsonl", "./dataset/math_error.jsonl")
-    # generate_math_answer("./dataset/math_error.jsonl", "./dataset/math_answer.jsonl")
+    # generate_dataset_math("./src/dataset/math.jsonl", 67)
+    # generate_math_error("./src/dataset/math.jsonl", "./src/dataset/math_error.jsonl")
+    # generate_math_answer("./src/dataset/math_error.jsonl", "./src/dataset/math_answer.jsonl")
     # generate_dataset("gsm8k", ["openai/gsm8k", "main"], 113)
-    # generate_gsm8k_answer("./dataset/gsm8k.jsonl", "./dataset/gsm8k_answer.jsonl")
+    # generate_gsm8k_answer("./src/dataset/gsm8k.jsonl", "./src/dataset/gsm8k_answer.jsonl")
     # generate_dataset("adv", ["walledai/AdvBench"], 101)

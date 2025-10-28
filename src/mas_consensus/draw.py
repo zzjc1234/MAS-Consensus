@@ -1,9 +1,10 @@
-import evaluate
 import matplotlib.pyplot as plt
-import methods
 import numpy as np
 import pandas as pd
 import seaborn as sns
+
+from . import evaluate
+from . import methods
 
 
 def SAA_heatmap(metric, agent_labels=None, round_labels=None):
@@ -366,7 +367,7 @@ if __name__ == "__main__":
     agent_num = 6
     attacker_nums = [5]
     attacker_num = 5
-    dataset_path = f"./dataset/{dataset}.jsonl"
+    dataset_path = f"./src/dataset/{dataset}.jsonl"
     if "SAA" in evaluation:
         for graph_type in graph_types:
             print(f"Graph: {graph_type}_{agent_num}, Attacker Number: {attacker_num}")
