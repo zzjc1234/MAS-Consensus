@@ -1,0 +1,8 @@
+datasets|graphs|num-agents|attacker-num|malicious_auditor_num|num-auditors|run_baseline|type_one_attack|type_two_attack|both_attacks|reg-turn|sample-id|threads|model
+all|all|6|1|0|2|1|1|0|0|default|default|default|gpt-4o-mini
+all|all|6|1|0|2|1|1|0|0|default|default|default|gpt-3.5-turbo
+all|all|6|1|0|2|1|1|0|0|default|default|default|deepseek-v3
+all|all|6|1|0|2|1|1|0|0|default|default|default|qwen
+GSM8K|all|6|0|0|2|1|0|0|0|default|default|default|gpt-4o-mini
+GSM8K|all|6|1|0|2|0|1|0|0|default|default|default|gpt-4o-mini
+all|all|6|1|1|1|0|1|1|0|default|default|default|gpt-4o-mini
