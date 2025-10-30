@@ -5,7 +5,7 @@ all|all|10|3|0|2|1|1|0|0|default|default|default|gpt-4o-mini
 all|all|20|2|0|2|1|1|0|0|default|default|default|gpt-4o-mini
 all|all|20|5|0|2|1|1|0|0|default|default|default|gpt-4o-mini
 all|all|40|8|0|2|1|1|0|0|default|default|default|gpt-4o-mini
-all|all|6|1|2|10|0|0|1|1|default|default|default|gpt-4o-mini
+all|all|6|1|2|2|0|0|1|1|default|default|default|gpt-4o-mini
 all|all|6|1|0|2|1|1|0|0|default|default|default|gpt-4o-mini
 all|all|6|1|0|2|1|1|0|0|default|default|default|gpt-3.5-turbo
 all|all|6|1|0|2|1|1|0|0|default|default|default|deepseek-v3
