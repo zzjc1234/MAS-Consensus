@@ -10,6 +10,7 @@ from . import methods
 
 
 def evaluate(dataset_path, output_path, attacker_num, type):
+    print(f"output_path: {output_path}")
     if "csqa" in dataset_path:
         evaluator = CsqaEvaluation(dataset_path, output_path, attacker_num, type)
     elif "fact" in dataset_path:
@@ -92,10 +93,7 @@ if __name__ == "__main__":
             type = evaluation.split("_")[-1]
             metrics = []
             for sample_id in sample_ids:
-                if dataset == "adv":
-                    output_path = f"moderation/{model}/{dataset}/{sample_id}/{dataset}_{graph_type}_{agent_num}_{attacker_num}.output"
-                else:
-                    output_path = f"src/output/{model}/{dataset}/{sample_id}/{dataset}_{graph_type}_{agent_num}_{attacker_num}.output"
+                output_path = f"src/output/{model}/{dataset}/{sample_id}/{dataset}_{graph_type}_{agent_num}_{attacker_num}.output"
                 accuracy = evaluate(dataset_path, output_path, attacker_num, type)
                 metrics.append(accuracy)
             metrics = np.array(metrics)
