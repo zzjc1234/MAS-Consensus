@@ -1,6 +1,6 @@
 datasets|graphs|num-agents|attacker-num|malicious_auditor_num|num-auditors|run_baseline|type_one_attack|type_two_attack|both_attacks|reg-turn|sample-id|threads|model
 csqa|all|6|1|0|2|0|1|0|0|default|default|default|gpt-4o-mini
-all|all|6|1|2|10|0|0|1|1|default|default|default|gpt-4o-mini
+all|all|6|1|2|2|0|0|1|1|default|default|default|gpt-4o-mini
 all|all|6|0|0|0|0|0|0|0|default|default|default|gpt-4o-mini
 all|all|6|1|0|0|0|1|0|0|default|default|default|gpt-4o-mini
 all|all|6|1|0|1|0|1|0|0|default|default|default|gpt-4o-mini
