@@ -57,7 +57,7 @@ tail -n +2 experiment.psv | while IFS='|' read -r datasets graphs num_agents att
     # Execute for each dataset and graph combination
     for dataset in $dataset_list; do
         for graph in $graph_list; do
-            
+
             # BASELINE: Honest agents only, no attacks, no auditors
             if [ "$run_baseline" == "1" ]; then
                 echo "======================================================================"
@@ -65,7 +65,7 @@ tail -n +2 experiment.psv | while IFS='|' read -r datasets graphs num_agents att
                 echo "  Agents: $num_agents (all honest)"
                 echo "  Auditors: 0"
                 echo "======================================================================"
-                
+
                 python -m src.mas_consensus.run_experiment \
                     --dataset "$dataset" \
                     --graph_type "$graph" \
@@ -76,9 +76,10 @@ tail -n +2 experiment.psv | while IFS='|' read -r datasets graphs num_agents att
                     --reg_turn "$reg_turn_val" \
                     --sample_id "$sample_id_val" \
                     --threads "$threads_val" \
-                    --model "$model_val"
+                    --model "$model_val"\
+										--json_format
             fi
-            
+
             # TYPE 1 ATTACK: Agents (some malicious) + auditors (all honest)
             # Type 1 attack: malicious agents give wrong answers
             if [ "$type_one_attack" == "1" ]; then
@@ -87,7 +88,7 @@ tail -n +2 experiment.psv | while IFS='|' read -r datasets graphs num_agents att
                 echo "  Agents: $num_agents ($attacker_num_val malicious - Type 1 attack)"
                 echo "  Auditors: $num_auditors_val (all honest - defending)"
                 echo "======================================================================"
-                
+
                 python -m src.mas_consensus.run_experiment \
                     --dataset "$dataset" \
                     --graph_type "$graph" \
@@ -99,9 +100,10 @@ tail -n +2 experiment.psv | while IFS='|' read -r datasets graphs num_agents att
                     --sample_id "$sample_id_val" \
                     --threads "$threads_val" \
                     --model "$model_val" \
-                    --output_suffix "_type1"
+                    --output_suffix "_type1"\
+										--json_format
             fi
-            
+
             # TYPE 2 ONLY: Honest agents + malicious auditors
             # Type 2 attack only: malicious auditors (audit + vote maliciously)
             if [ "$type_two_attack" == "1" ]; then
@@ -110,7 +112,7 @@ tail -n +2 experiment.psv | while IFS='|' read -r datasets graphs num_agents att
                 echo "  Agents: $num_agents (all honest)"
                 echo "  Auditors: $num_auditors_val ($malicious_auditor_num_val malicious - Type 2 attack)"
                 echo "======================================================================"
-                
+
                 python -m src.mas_consensus.run_experiment \
                     --dataset "$dataset" \
                     --graph_type "$graph" \
@@ -122,9 +124,10 @@ tail -n +2 experiment.psv | while IFS='|' read -r datasets graphs num_agents att
                     --sample_id "$sample_id_val" \
                     --threads "$threads_val" \
                     --model "$model_val" \
-                    --output_suffix "_type2"
+                    --output_suffix "_type2"\
+										--json_format
             fi
-            
+
             # BOTH ATTACKS: Malicious agents + malicious auditors
             # Type 1 attack: malicious agents
             # Type 2 attack: malicious auditors
@@ -134,7 +137,7 @@ tail -n +2 experiment.psv | while IFS='|' read -r datasets graphs num_agents att
                 echo "  Agents: $num_agents ($attacker_num_val malicious - Type 1 attack)"
                 echo "  Auditors: $num_auditors_val ($malicious_auditor_num_val malicious - Type 2 attack)"
                 echo "======================================================================"
-                
+
                 python -m src.mas_consensus.run_experiment \
                     --dataset "$dataset" \
                     --graph_type "$graph" \
@@ -146,9 +149,11 @@ tail -n +2 experiment.psv | while IFS='|' read -r datasets graphs num_agents att
                     --sample_id "$sample_id_val" \
                     --threads "$threads_val" \
                     --model "$model_val" \
-                    --output_suffix "_both"
+                    --output_suffix "_both" \
+										--json_format
+
             fi
-            
+
         done
     done
 done
