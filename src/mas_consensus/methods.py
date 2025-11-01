@@ -5,7 +5,7 @@ from openai import OpenAI
 
 
 def get_client(openai_api_key=os.environ["OPENAI_API_KEY"]):
-    client = OpenAI(base_url="http://35.220.164.252:3888/v1/", api_key=openai_api_key)
+    client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=openai_api_key)
     return client
 
 
@@ -23,16 +23,16 @@ def create_file(path):
 def generate_adj(n, graph_type):
     """
     Generate adjacency matrix for different graph topologies.
-    
+
     Args:
         n: Number of nodes
         graph_type: Type of graph (complete, tree, chain, star, circle)
-    
+
     Returns:
         Adjacency matrix as numpy array
     """
     adj_matrix = None
-    
+
     if "complete" in graph_type:
         adj_matrix = np.ones((n, n), dtype=int)
         np.fill_diagonal(adj_matrix, 0)
@@ -70,8 +70,10 @@ def generate_adj(n, graph_type):
             adj_matrix[i][(i + 1) % n] = 1
             adj_matrix[(i + 1) % n][i] = 1
     else:
-        raise ValueError(f"Unknown graph type: {graph_type}. Valid types: complete, tree, chain, star, circle")
-    
+        raise ValueError(
+            f"Unknown graph type: {graph_type}. Valid types: complete, tree, chain, star, circle"
+        )
+
     return adj_matrix
 
 
