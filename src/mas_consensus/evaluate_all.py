@@ -67,7 +67,7 @@ def static_evaluate(adj_matrix, attacker_idx, type):
 
 
 if __name__ == "__main__":
-    evaluation = "dynamic_SAA"
+    evaluation = "dynamic_MJA"
     latex = False
     # evaluation = "static_PV"
     sample_ids = [3]
@@ -75,7 +75,7 @@ if __name__ == "__main__":
     model = "gpt-4o-mini"
     if dataset == "adv":
         model = "gpt-3.5-turbo"
-    graph_types = ["chain", "circle", "tree", "star", "complete"][-1:]
+    graph_types = ["chain"]
     agent_num = 6
     attacker_num = 0
     dataset_path = f"./src/dataset/{dataset}.jsonl"

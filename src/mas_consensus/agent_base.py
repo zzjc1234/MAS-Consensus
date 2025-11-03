@@ -557,12 +557,12 @@ class AgentGraph:
 
     def save(self, output_path, format):
         # Save agents (those who answer questions)
-        for i, agent in enumerate(self.agents):
-            self.record[f"Agent_{i}"] = agent.dialogue
+        for agent in self.agents:
+            self.record[f"Agent_{agent.idx}"] = agent.dialogue
 
         # Save auditor agents (those who audit and vote)
-        for i, auditor in enumerate(self.auditor_agents):
-            self.record[f"Auditor_{i}"] = auditor.dialogue
+        for auditor in self.auditor_agents:
+            self.record[f"Auditor_{auditor.idx}"] = auditor.dialogue
 
         with write_lock:
             methods.create_file(output_path)
