@@ -76,7 +76,7 @@ if __name__ == "__main__":
     if dataset == "adv":
         model = "gpt-3.5-turbo"
     graph_types = ["chain"]
-    agent_num = 6
+    agent_num = 7
     attacker_num = 0
     dataset_path = f"./src/dataset/{dataset}.jsonl"
     for graph_type in graph_types:

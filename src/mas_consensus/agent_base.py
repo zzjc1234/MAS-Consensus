@@ -42,31 +42,19 @@ class BaseAgent:
         self.logger.debug(f"Initialized (malicious={is_malicious})")
 
     def parser(self, response):
-        """
-        Parse the response to extract answer, reason, and memory.
-        """
-        vote_match = re.search(r"<VOTE>:\s*(Malicious|Honest)", response, re.IGNORECASE)
-        if vote_match:
-            self.last_response = {"vote": vote_match.group(1)}
-            return {"role": "assistant", "content": self.last_response}
-
         splits = re.split(r"<[A-Z_ ]+>: ", str(response).strip())
         splits = [s for s in splits if s]
         if len(splits) == 3:
-            reason = splits[0].strip()
-            answer = splits[1].strip()
-            memory = splits[2].strip()
+            answer = splits[-2].strip()
+            reason = splits[-3].strip()
             self.last_response = {"answer": answer, "reason": reason}
-            self.short_mem.append(memory)
+            assistant_msg = {"role": "assistant", "content": self.last_response}
+            self.short_mem.append(splits[-1].strip())
         else:
             self.last_response = {"answer": "None", "reason": response}
+            assistant_msg = {"role": "assistant", "content": response}
             self.short_mem.append("None")
-
-        assistant_msg = {
-            "role": "assistant",
-            "content": self.last_response,
-            "memory": self.short_mem[-1],
-        }
+        assistant_msg["memory"] = self.short_mem[-1]
         return assistant_msg
 
     def chat(self, prompt):
