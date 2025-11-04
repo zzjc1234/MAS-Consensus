@@ -524,24 +524,53 @@ class AgentGraph:
             ]
             if non_malicious_agents:
                 random_agent = random.choice(non_malicious_agents)
+                # Replace the last response
                 agent_to_vote_on.last_response = copy.deepcopy(
                     random_agent.last_response
                 )
+
+                # Find the last assistant message from the honest agent to copy
+                last_honest_assistant_msg = next(
+                    (
+                        msg
+                        for msg in reversed(random_agent.dialogue)
+                        if msg["role"] == "assistant"
+                    ),
+                    None,
+                )
+
+                # Replace the malicious agent's last assistant message with the honest one
+                if last_honest_assistant_msg:
+                    # We assume the last entry is the one to be replaced.
+                    if (
+                        agent_to_vote_on.dialogue
+                        and agent_to_vote_on.dialogue[-1]["role"] == "assistant"
+                    ):
+                        agent_to_vote_on.dialogue[-1] = copy.deepcopy(
+                            last_honest_assistant_msg
+                        )
+
+                # Also replace the last memory item
+                if agent_to_vote_on.short_mem and random_agent.short_mem:
+                    agent_to_vote_on.short_mem[-1] = random_agent.short_mem[-1]
+
                 self.logger.info(
-                    f"Reformed agent {agent_to_vote_on.idx}'s response has been replaced with "
-                    f"the response from non-malicious agent {random_agent.idx}."
+                    f"Reformed agent {agent_to_vote_on.idx}'s last response and dialogue entry have been replaced by agent {random_agent.idx}."
                 )
             else:
+                # Fallback if no honest agents are available
                 agent_to_vote_on.last_response = {"answer": "None", "reason": "None"}
+                if (
+                    agent_to_vote_on.dialogue
+                    and agent_to_vote_on.dialogue[-1]["role"] == "assistant"
+                ):
+                    agent_to_vote_on.dialogue[-1]["content"] = {
+                        "answer": "None",
+                        "reason": "None",
+                    }
+                if agent_to_vote_on.short_mem:
+                    agent_to_vote_on.short_mem[-1] = "None"
 
-            agent_to_vote_on.dialogue = [
-                {
-                    "role": "system",
-                    "content": f"You are Agent_{agent_to_vote_on.idx}. Always keep this role in mind.\n"
-                    + self.standard_system_prompt,
-                }
-            ]
-            agent_to_vote_on.short_mem = ["None"]
             self.record["voting_results"].append(
                 {
                     "turn": turn_num,
