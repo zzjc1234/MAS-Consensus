@@ -405,7 +405,7 @@ class AgentGraph:
             threads = []
 
             # Only agents re-generate (auditors don't participate in discussion)
-            for i, agent in enumerate(self.agents):
+            for _, agent in enumerate(self.agents):
                 # Get neighbors from agents only (not auditors)
                 # adj_matrix uses original indices, so we need to find corresponding agents
                 neighbors = []
@@ -517,11 +517,31 @@ class AgentGraph:
                 f"[VOTE_PASSED] Turn {turn_num + 1}: Agent {agent_to_vote_on.idx} confirmed MALICIOUS ({malicious_votes}/{len(voters)} votes) → Reforming agent"
             )
             agent_to_vote_on.is_malicious = False
-            agent_to_vote_on.dialogue[0] = {
-                "role": "system",
-                "content": f"You are Agent_{agent_to_vote_on.idx}. Always keep this role in mind.\n"
-                + self.standard_system_prompt,
-            }
+            non_malicious_agents = [
+                agent
+                for agent in self.agents
+                if not agent.is_malicious and agent.idx != agent_to_vote_on.idx
+            ]
+            if non_malicious_agents:
+                random_agent = random.choice(non_malicious_agents)
+                agent_to_vote_on.last_response = copy.deepcopy(
+                    random_agent.last_response
+                )
+                self.logger.info(
+                    f"Reformed agent {agent_to_vote_on.idx}'s response has been replaced with "
+                    f"the response from non-malicious agent {random_agent.idx}."
+                )
+            else:
+                agent_to_vote_on.last_response = {"answer": "None", "reason": "None"}
+
+            agent_to_vote_on.dialogue = [
+                {
+                    "role": "system",
+                    "content": f"You are Agent_{agent_to_vote_on.idx}. Always keep this role in mind.\n"
+                    + self.standard_system_prompt,
+                }
+            ]
+            agent_to_vote_on.short_mem = ["None"]
             self.record["voting_results"].append(
                 {
                     "turn": turn_num,
