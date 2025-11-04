@@ -15,14 +15,10 @@ See EXPERIMENT_GUIDE.md for examples.
 
 import os
 import argparse
-import random
 
 from . import util
 from . import experiment_config
 from . import logging_config
-
-# Set random seed for reproducibility
-random.seed(42)
 
 # Get console logger for high-level progress
 progress_logger = logging_config.get_console_logger()
@@ -54,19 +50,19 @@ if __name__ == "__main__":
         "--attacker_num",
         type=int,
         default=0,
-        help="Number of malicious agents (Type 1 attack: give wrong answers). Default: 0",
+        help="Number of malicious agents (Type 1 attack: give wrong answers). Assigned deterministically after auditors. Default: 0",
     )
     parser.add_argument(
         "--malicious_auditor_num",
         type=int,
         default=0,
-        help="Number of malicious auditors (Type 2 attack: audit and vote maliciously). Default: 0",
+        help="Number of malicious auditors (Type 2 attack: audit and vote maliciously). Assigned as first N auditors (indices 0 to N-1). Default: 0",
     )
     parser.add_argument(
         "--num_auditors",
         type=int,
         default=0,
-        help="Number of auditor agents (auditors audit and vote, don't answer questions). Default: 0",
+        help="Number of auditor agents (auditors audit and vote, don't answer questions). Assigned starting from index 0. Default: 0",
     )
     parser.add_argument(
         "--sample_id",
@@ -89,7 +85,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model",
         type=str,
-        default="gpt-4o-mini",
+        default="openai/gpt-4o-mini",
         help="Model to use. Default: gpt-4o-mini",
     )
     parser.add_argument(
@@ -125,68 +121,38 @@ if __name__ == "__main__":
             f"Malicious agents must remain in discussion, and auditors are selected from remaining agents."
         )
 
-    # Prepare attacker indices (randomly select malicious agents)
-    if args.attacker_num > 0:
-        attacker_idx = random.sample(range(args.num_agents), args.attacker_num)
-    else:
-        attacker_idx = []
-
-    # Prepare auditor selection:
-    # Step 1: Randomly select which agents become auditors (excluding malicious agents)
-    # Step 2: From those selected auditors, randomly choose which ones are malicious
+    # Prepare deterministic index assignment:
+    # - Auditors start from index 0 (if any auditors exist)
+    # - Malicious auditors are the first N auditors (indices 0 to malicious_auditor_num-1)
+    # - Attackers follow after all auditors (starting from num_auditors)
+    # - If no auditors, attackers start from 0
+    
     if args.num_auditors > 0:
-        # Malicious agents (attacker_idx) must remain in discussion, so exclude them from auditor selection
-        # Available agents for auditor selection = all agents except malicious ones
-        available_for_auditors = [
-            i for i in range(args.num_agents) if i not in attacker_idx
-        ]
-
-        if len(available_for_auditors) < args.num_auditors:
-            raise ValueError(
-                f"Cannot select {args.num_auditors} auditors from {len(available_for_auditors)} available agents "
-                f"(excluding {args.attacker_num} malicious agents that must remain in discussion)"
-            )
-
-        # Step 1: Randomly select auditor indices from available agents (not including attackers)
-        auditor_indices = random.sample(available_for_auditors, args.num_auditors)
-
-        # Step 2: From selected auditors, randomly choose which are malicious
+        # Auditors occupy indices [0, 1, 2, ..., num_auditors-1]
+        auditor_idx = list(range(args.num_auditors))
+        
+        # Malicious auditors are the first malicious_auditor_num auditors
         if args.malicious_auditor_num > 0:
-            malicious_auditor_idx = random.sample(
-                auditor_indices, args.malicious_auditor_num
-            )
+            malicious_auditor_idx = list(range(args.malicious_auditor_num))
         else:
             malicious_auditor_idx = None
-
-        # Verify constraint: auditor indices must not overlap with attacker indices
-        overlap = set(auditor_indices) & set(attacker_idx)
-        if overlap:
-            raise ValueError(
-                f"Internal error: Auditors {overlap} overlap with malicious agents! "
-                "Malicious agents must stay in discussion."
-            )
-
-        # Verify malicious auditors are subset of auditors
-        if malicious_auditor_idx:
-            if not set(malicious_auditor_idx).issubset(set(auditor_indices)):
-                raise ValueError(
-                    f"Internal error: Malicious auditors {malicious_auditor_idx} not subset of auditors {auditor_indices}"
-                )
-
-        # Pass auditor_indices to util.run_dataset
-        auditor_idx = auditor_indices
+        
+        # Attackers start after all auditors
+        if args.attacker_num > 0:
+            attacker_idx = list(range(args.num_auditors, args.num_auditors + args.attacker_num))
+        else:
+            attacker_idx = []
     else:
+        # No auditors, so attackers start from 0
         auditor_idx = None
         malicious_auditor_idx = None
+        
+        if args.attacker_num > 0:
+            attacker_idx = list(range(args.attacker_num))
+        else:
+            attacker_idx = []
 
-    # Final validation: Ensure we have the expected configuration
-    if args.attacker_num > 0:
-        # Verify malicious agents will be in discussion (not in auditor group)
-        if auditor_idx and any(idx in auditor_idx for idx in attacker_idx):
-            raise ValueError(
-                f"Configuration error: Malicious agents {attacker_idx} cannot be auditors. "
-                "They must remain in discussion group to execute Type 1 attack."
-            )
+    # With deterministic assignment, auditors and attackers never overlap by design
 
     # Create output directory
     output_dir = f"./src/output/{args.model}/{args.dataset}/{args.sample_id}"
@@ -198,18 +164,18 @@ if __name__ == "__main__":
     progress_logger.info(f"  Total agents: {args.num_agents}")
     if args.attacker_num > 0:
         progress_logger.info(
-            f"  Malicious agents (Type 1): {args.attacker_num} randomly selected at {attacker_idx} → DISCUSSION"
+            f"  Malicious agents (Type 1): {args.attacker_num} at indices {attacker_idx} → DISCUSSION"
         )
     else:
         progress_logger.info("  Malicious agents (Type 1): 0 - all honest")
 
     if args.num_auditors > 0:
         progress_logger.info(
-            f"  Auditors: {args.num_auditors} randomly selected from non-malicious agents at {auditor_idx} → AUDIT & VOTE"
+            f"  Auditors: {args.num_auditors} at indices {auditor_idx} → AUDIT & VOTE"
         )
         if malicious_auditor_idx:
             progress_logger.info(
-                f"    - Malicious auditors (Type 2): {args.malicious_auditor_num} at {malicious_auditor_idx}"
+                f"    - Malicious auditors (Type 2): {args.malicious_auditor_num} at indices {malicious_auditor_idx}"
             )
         else:
             progress_logger.info("    - All auditors honest")
