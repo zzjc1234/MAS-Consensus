@@ -405,7 +405,7 @@ class AgentGraph:
             threads = []
 
             # Only agents re-generate (auditors don't participate in discussion)
-            for i, agent in enumerate(self.agents):
+            for _, agent in enumerate(self.agents):
                 # Get neighbors from agents only (not auditors)
                 # adj_matrix uses original indices, so we need to find corresponding agents
                 neighbors = []
@@ -517,11 +517,60 @@ class AgentGraph:
                 f"[VOTE_PASSED] Turn {turn_num + 1}: Agent {agent_to_vote_on.idx} confirmed MALICIOUS ({malicious_votes}/{len(voters)} votes) → Reforming agent"
             )
             agent_to_vote_on.is_malicious = False
-            agent_to_vote_on.dialogue[0] = {
-                "role": "system",
-                "content": f"You are Agent_{agent_to_vote_on.idx}. Always keep this role in mind.\n"
-                + self.standard_system_prompt,
-            }
+            non_malicious_agents = [
+                agent
+                for agent in self.agents
+                if not agent.is_malicious and agent.idx != agent_to_vote_on.idx
+            ]
+            if non_malicious_agents:
+                random_agent = random.choice(non_malicious_agents)
+                # Replace the last response
+                agent_to_vote_on.last_response = copy.deepcopy(
+                    random_agent.last_response
+                )
+
+                # Find the last assistant message from the honest agent to copy
+                last_honest_assistant_msg = next(
+                    (
+                        msg
+                        for msg in reversed(random_agent.dialogue)
+                        if msg["role"] == "assistant"
+                    ),
+                    None,
+                )
+
+                # Replace the malicious agent's last assistant message with the honest one
+                if last_honest_assistant_msg:
+                    # We assume the last entry is the one to be replaced.
+                    if (
+                        agent_to_vote_on.dialogue
+                        and agent_to_vote_on.dialogue[-1]["role"] == "assistant"
+                    ):
+                        agent_to_vote_on.dialogue[-1] = copy.deepcopy(
+                            last_honest_assistant_msg
+                        )
+
+                # Also replace the last memory item
+                if agent_to_vote_on.short_mem and random_agent.short_mem:
+                    agent_to_vote_on.short_mem[-1] = random_agent.short_mem[-1]
+
+                self.logger.info(
+                    f"Reformed agent {agent_to_vote_on.idx}'s last response and dialogue entry have been replaced by agent {random_agent.idx}."
+                )
+            else:
+                # Fallback if no honest agents are available
+                agent_to_vote_on.last_response = {"answer": "None", "reason": "None"}
+                if (
+                    agent_to_vote_on.dialogue
+                    and agent_to_vote_on.dialogue[-1]["role"] == "assistant"
+                ):
+                    agent_to_vote_on.dialogue[-1]["content"] = {
+                        "answer": "None",
+                        "reason": "None",
+                    }
+                if agent_to_vote_on.short_mem:
+                    agent_to_vote_on.short_mem[-1] = "None"
+
             self.record["voting_results"].append(
                 {
                     "turn": turn_num,
