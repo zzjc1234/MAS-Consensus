@@ -27,7 +27,7 @@ fi
 ulimit -n 65536 
 
 # Read and execute experiments, skipping the header line
-tail -n +2 part5.psv | while IFS='|' read -r datasets graphs num_agents attacker_num malicious_auditor_num num_auditors run_baseline type_one_attack type_two_attack both_attacks reg_turn sample_id threads model; do
+tail -n +2 experiment.psv | while IFS='|' read -r datasets graphs num_agents attacker_num malicious_auditor_num num_auditors run_baseline type_one_attack type_two_attack both_attacks reg_turn sample_id threads model; do
     # Skip empty lines
     if [ -z "$datasets" ]; then
         continue
