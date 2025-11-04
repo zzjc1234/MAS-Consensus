@@ -438,23 +438,21 @@ class AgentGraph:
             # Audit step - Auditors audit agents (not each other)
             if self.num_auditors > 0:
                 audit_threads = []
-                num_agents_to_audit = random.randint(1, len(self.agents))
                 agents_to_audit_ids = None  # Will be set below
 
                 self.logger.info("-" * 80)
                 self.logger.info(
-                    f"TURN {turn_num + 1}/{turns} - AUDIT PHASE: {len(self.auditor_agents)} auditors auditing {num_agents_to_audit}/{len(self.agents)} agents"
+                    f"TURN {turn_num + 1}/{turns} - AUDIT PHASE: {len(self.auditor_agents)} auditors auditing all worker agents"
                 )
-                agents_to_audit = random.sample(
-                    self.agents, k=num_agents_to_audit
-                )  # Audit random number of agents
+                agents_to_audit = self.agents
+                auditor_to_audit = random.sample(self.auditor_agents, 2)
                 agents_to_audit_ids = [a.idx for a in agents_to_audit]
                 self.logger.info(f"Agents being audited: {agents_to_audit_ids}")
 
                 for agent_to_audit in agents_to_audit:
-                    for auditor in (
-                        self.auditor_agents
-                    ):  # All auditors inspect each selected agent
+                    for (
+                        auditor
+                    ) in auditor_to_audit:  # 2 auditors inspect each selected agent
                         thread = threading.Thread(
                             target=self._run_audit,
                             args=(auditor, agent_to_audit, turn_num),
