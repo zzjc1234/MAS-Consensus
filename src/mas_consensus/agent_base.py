@@ -35,7 +35,7 @@ class BaseAgent:
 
         if system_prompt:
             self.dialogue.append({"role": "system", "content": system_prompt})
-        if "gpt" in model_type:
+        if "gpt" in model_type or "gemini" in model_type:
             self.client = methods.get_client()
 
         # Log initialization (will include task context from logger name)
