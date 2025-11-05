@@ -33,7 +33,7 @@ def _process_item(
         attacker_system_prompt if i in attacker_idx else system_prompt
         for i in range(num_agents)
     ]
-    
+
     # Create task-specific log directory
     if log_dir:
         task_log_dir = Path(log_dir) / f"task_{task_id}"
@@ -91,12 +91,19 @@ def run_dataset(
 
     methods.create_directory(f"./src/output/{model}/{ds_name}/{sample_id}")
     dataset = methods.get_dataset(f"./src/dataset/{ds_name}.jsonl")
-    
+    dataset = dataset[0:10]
+
     # Set up logging for this experiment run
     log_dir = logging_config.setup_experiment_logging(
-        model, ds_name, sample_id, graph_type, num_agents, len(attacker_idx), mode_suffix
+        model,
+        ds_name,
+        sample_id,
+        graph_type,
+        num_agents,
+        len(attacker_idx),
+        mode_suffix,
     )
-    
+
     # Get console logger for high-level progress
     progress = logging_config.get_console_logger()
     progress.info(f"Processing {len(dataset)} items from {ds_name} dataset...")
@@ -139,5 +146,5 @@ def run_dataset(
         t.start()
     for t in threads:
         t.join()
-    
+
     progress.info(f"✓ Completed processing {len(dataset)} items")

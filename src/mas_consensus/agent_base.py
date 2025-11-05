@@ -134,6 +134,7 @@ class BaseAgent:
             prompt += (
                 "\n<UPDATED_MEMORY>: {Summarize the new memory in less than 100 words.}"
             )
+            self.logger.debug(f"[ALL_Prompts]: {prompt}")
             self.chat(prompt)
             self.logger.info(
                 f"[RE_GENERATE] Completed → Answer: {self.last_response.get('answer', 'N/A')}"
@@ -275,7 +276,7 @@ class AgentGraph:
         self.malicious_auditor_idx = (
             malicious_auditor_idx if malicious_auditor_idx is not None else []
         )
-        self.standard_system_prompt = prompts.discussion_prompt["system_prompt"]
+        self.system_prompt = prompts.discussion_prompt["system_prompt"]
         self.num_auditors = num_auditors
         self.voting_lock = threading.Lock()
         self.voting_initiated_agents = set()
@@ -515,6 +516,28 @@ class AgentGraph:
                 f"[VOTE_PASSED] Turn {turn_num + 1}: Agent {agent_to_vote_on.idx} confirmed MALICIOUS ({malicious_votes}/{len(voters)} votes) → Reforming agent"
             )
             agent_to_vote_on.is_malicious = False
+            # Find a non-malicious task to assign to the reformed agent.
+            # A non-malicious task belongs to an agent that was not in the initial attacker list.
+            non_attacker_indices = [
+                i
+                for i in range(
+                    (self.num_auditors + len(self.attacker_idx)), self.num_agents
+                )
+                if i not in self.attacker_idx
+            ]
+
+            if non_attacker_indices:
+                # Pick a random non-attacker's task and assign it to the reformed agent.
+                good_task_idx = random.choice(non_attacker_indices)
+                self.tasks[agent_to_vote_on.idx] = self.tasks[good_task_idx]
+                self.logger.info(
+                    f"Agent {agent_to_vote_on.idx}'s task has been replaced with a non-malicious task from agent {good_task_idx}."
+                )
+            else:
+                self.logger.warning(
+                    f"Could not find a non-malicious task to assign to reformed agent {agent_to_vote_on.idx} because all agents were initialized as attackers."
+                )
+
             non_malicious_agents = [
                 agent
                 for agent in self.agents
