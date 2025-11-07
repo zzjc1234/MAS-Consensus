@@ -5,7 +5,7 @@ from openai import OpenAI
 
 
 def get_client(openai_api_key=os.environ["OPENAI_API_KEY"]):
-    client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=openai_api_key)
+    client = OpenAI(base_url="https://api.chatanywhere.tech/v1", api_key=openai_api_key)
     return client
 
 
