@@ -1,8 +1,9 @@
 import re
+import argparse
 import networkx as nx
 from tqdm import tqdm
 import numpy as np
-import methods
+from . import methods
 
 
 def evaluate_csqa(dataset_path, output_path, attacker_num, auditor_num, type):
@@ -323,40 +324,113 @@ def static_evaluate(adj_matrix, attacker_idx, type):
 
 
 if __name__ == "__main__":
-    evaluation = "dynamic_MJA"
-    latex = False
-    # evaluation = "static_PV"
-    sample_ids = [3]
-    dataset = "csqa"
-    model = "gpt-4o-mini"
-    if dataset == "adv":
-        model = "gpt-3.5-turbo"
-    # graph_types = ["chain", "circle", "tree", "star", "complete"][-1:]
-    graph_types = ["chain"]
-    agent_num = 6
-    attacker_num = 1
-    auditor_num = 2
+    parser = argparse.ArgumentParser(description="Evaluate experiment results")
+    parser.add_argument(
+        "--evaluation",
+        type=str,
+        default="dynamic_MJA",
+        help="Evaluation type: dynamic_SAA, dynamic_MJA, or static_*",
+    )
+    parser.add_argument(
+        "--dataset",
+        type=str,
+        default="csqa",
+        help="Dataset name: csqa, gsm8k, fact, bias, adv",
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default=None,
+        help="Model name (defaults based on dataset)",
+    )
+    parser.add_argument(
+        "--sample_ids",
+        type=int,
+        nargs="+",
+        default=[3],
+        help="Sample IDs to evaluate",
+    )
+    parser.add_argument(
+        "--graph_types",
+        type=str,
+        nargs="+",
+        default=["chain"],
+        help="Graph types to evaluate",
+    )
+    parser.add_argument(
+        "--agent_num",
+        type=int,
+        default=6,
+        help="Number of agents",
+    )
+    parser.add_argument(
+        "--attacker_num",
+        type=int,
+        default=1,
+        help="Number of attackers",
+    )
+    parser.add_argument(
+        "--auditor_num",
+        type=int,
+        default=2,
+        help="Number of auditors",
+    )
+    parser.add_argument(
+        "--type",
+        type=int,
+        default=None,
+        help="Output file type suffix (e.g., 1 for _type1, None for baseline)",
+    )
+    parser.add_argument(
+        "--latex",
+        action="store_true",
+        help="Output LaTeX format",
+    )
+    
+    args = parser.parse_args()
+    
+    evaluation = args.evaluation
+    latex = args.latex
+    sample_ids = args.sample_ids
+    dataset = args.dataset
+    model = args.model
+    if model is None:
+        if dataset == "adv":
+            model = "gpt-3.5-turbo"
+        else:
+            model = "gpt-4o-mini"
+    graph_types = args.graph_types
+    agent_num = args.agent_num
+    attacker_num = args.attacker_num
+    auditor_num = args.auditor_num
+    output_type = args.type
     dataset_path = f"src/dataset/{dataset}.jsonl"
+    
     for graph_type in graph_types:
         print(f"Graph: {graph_type}_{agent_num}, Attacker Number: {attacker_num}")
         if "static" in evaluation:
-            type = evaluation.split("_")[-1]
+            eval_type = evaluation.split("_")[-1]
             metric = static_evaluate(
                 methods.generate_adj(agent_num, graph_type),
                 list(range(attacker_num + 1)),
-                type,
+                eval_type,
             )
-            print(f"Metric ({type}):", metric)
+            print(f"Metric ({eval_type}):", metric)
         else:
-            type = evaluation.split("_")[-1]
+            eval_type = evaluation.split("_")[-1]
             metrics = []
             for sample_id in sample_ids:
-                if dataset == "adv":
-                    output_path = f"moderation/{model}/{dataset}/{sample_id}/{dataset}_{graph_type}_{agent_num}_{attacker_num}.output"
-                else:
-                    output_path = f"src/output/{model}/{dataset}/{sample_id}/{dataset}_{graph_type}_{agent_num}_{attacker_num}.output"
+                # Build output path with type suffix if provided
+                base_filename = f"{dataset}_{graph_type}_{agent_num}_{attacker_num}"
+                if output_type is not None:
+                    base_filename += f"_type{output_type}"
+                base_filename += ".output"
+                
+                # All datasets use src/output directory (including adv)
+                output_path = f"src/output/{model}/{dataset}/{sample_id}/{base_filename}"
+                tqdm.write("evaluating file: " + output_path)
                 accuracy = evaluate(
-                    dataset_path, output_path, attacker_num, auditor_num, type
+                    dataset_path, output_path, attacker_num, auditor_num, eval_type
                 )
                 metrics.append(accuracy)
             metrics = np.array(metrics)
@@ -371,19 +445,19 @@ if __name__ == "__main__":
             if latex:
                 temp = ""
                 color = "gray"
-                graph_type = graph_type[0].upper() + graph_type[1:]
-                temp += f"\\rowcolor<{color}!10>\n{graph_type} &\n"
+                graph_type_display = graph_type[0].upper() + graph_type[1:]
+                temp += f"\\rowcolor<{color}!10>\n{graph_type_display} &\n"
                 for i in range(mean.shape[0]):
                     if i == 0:
                         temp += f"${mean[i]}$ &\n"
                     else:
                         if change[i - 1] > 0:
-                            type = "down"
+                            arrow_type = "down"
                         if change[i - 1] < 0:
-                            type = "up"
+                            arrow_type = "up"
                         if change[i - 1] == 0:
-                            type = "right"
-                        temp += f"${mean[i]}_<\\textcolor<{type}><\\{type}arrow {np.abs(change[i - 1])}>>$ "
+                            arrow_type = "right"
+                        temp += f"${mean[i]}_<\\textcolor<{arrow_type}><\\{arrow_type}arrow {np.abs(change[i - 1])}>>$ "
                         temp += "\\\\" if i == mean.shape[0] - 1 else "&\n"
                 temp = temp.replace("<", "{").replace(">", "}")
                 print(temp)
