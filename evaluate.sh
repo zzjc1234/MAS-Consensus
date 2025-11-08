@@ -1,34 +1,13 @@
 #!/bin/bash
 
-DATASET="csqa"
-GRAPH="circle"
-ATTACKER_NUM=2
-AUDITOR_NUM=4
+MODEL=gemini-2.5-flash
+DATASET=csqa
 
-python3 -m src.mas_consensus.evaluate \
-  --model gemini-2.5-flash \
-  --dataset $DATASET \
-  --graph_types $GRAPH \
-  --agent_num 10 \
-  --attacker_num 0 > baseline.out
+mkdir -p evaluation
 
-python3 -m src.mas_consensus.evaluate \
-  --model gemini-2.5-flash \
-  --dataset $DATASET \
-  --graph_types $GRAPH \
-  --agent_num 12 \
-  --attacker_num $ATTACKER_NUM \
-  --auditor_num 0 \
-  --type 1 > attacker-noauditor.out
+for file in src/output/${MODEL}/${DATASET}/3/*; do
+  file_name=${file##*/}
+  python3 -m src.mas_consensus.evaluate --file_path $file > "./evaluation/${file_name}"
 
-python3 -m src.mas_consensus.evaluate \
-  --model gemini-2.5-flash \
-  --dataset $DATASET \
-  --graph_types $GRAPH \
-  --agent_num 16 \
-  --attacker_num $ATTACKER_NUM \
-  --auditor_num $AUDITOR_NUM \
-  --type 1 > attacker-auditor.out
+done
 
-
-tail -n 3 *.out
