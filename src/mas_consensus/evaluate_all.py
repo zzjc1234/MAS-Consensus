@@ -8,7 +8,7 @@ from .evaluation.bias import BiasEvaluation
 from .evaluation.adv import AdvEvaluation
 from . import methods
 
-
+x
 def evaluate(dataset_path, output_path, attacker_num, type):
     print(f"output_path: {output_path}")
     if "csqa" in dataset_path:
@@ -67,12 +67,72 @@ def static_evaluate(adj_matrix, attacker_idx, type):
 
 
 if __name__ == "__main__":
+    import sys
+    
+    # Check if file_path is provided as command line argument
+    file_path = None
+    if len(sys.argv) > 1 and sys.argv[1].startswith("--file_path="):
+        file_path = sys.argv[1].split("=", 1)[1]
+    elif len(sys.argv) > 2 and sys.argv[1] == "--file_path":
+        file_path = sys.argv[2]
+    
     evaluation = "dynamic_MJA"
     latex = False
     # evaluation = "static_PV"
     sample_ids = [3]
     dataset = "csqa"
     model = "gpt-4o-mini"
+    attacker_num = 0
+    
+    # If file_path is provided, evaluate that file directly
+    if file_path:
+        # Try to infer dataset from file path
+        if "csqa" in file_path:
+            dataset = "csqa"
+        elif "gsm8k" in file_path:
+            dataset = "gsm8k"
+        elif "fact" in file_path:
+            dataset = "fact"
+        elif "bias" in file_path:
+            dataset = "bias"
+        elif "adv" in file_path:
+            dataset = "adv"
+        
+        # Allow override with --dataset argument
+        if "--dataset" in sys.argv:
+            dataset = sys.argv[sys.argv.index("--dataset") + 1]
+        
+        # Allow override with --attacker_num argument
+        if "--attacker_num" in sys.argv:
+            attacker_num = int(sys.argv[sys.argv.index("--attacker_num") + 1])
+        
+        dataset_path = f"./src/dataset/{dataset}.jsonl"
+        eval_type = evaluation.split("_")[-1]
+        
+        print(f"Evaluating file: {file_path}")
+        print(f"Dataset: {dataset}, Attacker num: {attacker_num}")
+        try:
+            accuracy = evaluate(dataset_path, file_path, attacker_num, eval_type)
+            # Wrap in array to match normal mode structure (1 sample)
+            metrics = np.array([accuracy])  # shape: (1, num_turns)
+            mean = np.mean(metrics, axis=0)  # same as accuracy, but consistent with normal mode
+            variance = np.var(metrics, axis=0)  # variance of 1 sample = 0
+            if dataset != "adv":
+                mean = np.round(100 * mean, 2)
+            change = np.round(mean[:-1] - mean[1:], 2) if len(mean) > 1 else np.array([])
+            print("Mean", mean)
+            if len(change) > 0:
+                print("Change", change)
+            print("Variance", variance)
+        except FileNotFoundError:
+            print(f"Error: File not found: {file_path}")
+        except Exception as e:
+            print(f"Error evaluating file: {e}")
+            import traceback
+            traceback.print_exc()
+        sys.exit(0)
+    
+    # Otherwise use hardcoded values
     if dataset == "adv":
         model = "gpt-3.5-turbo"
     graph_types = ["chain"]

@@ -8,7 +8,7 @@ if __name__ == "__main__":
     datasets = ["bias"]
     sample_ids = [3]
     graph_types = ["chain", "circle", "tree", "star", "complete"][:-1]
-    model = "gpt-4o-mini"
+    model = "openai/gpt-4o-mini"
     json_format = False
     p = 16  # Number of threads to process the dataset
     reg_turn = 9
