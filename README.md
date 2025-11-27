@@ -1,4 +1,4 @@
-# MAS Consensus
+# AgentShield: Make MAS more secure and efficient
 
 A multi-agent system for consensus-based text processing, implementing the "NetSafe" approach for analyzing how reviewer avoid malicious nodes during the tasks with large language models.
 
@@ -31,12 +31,13 @@ Based on the paper: [Netsafe](https://anonymous.4open.science/r/NetSafe-B726/REA
     pre-commit install
     ```
 
-## Usage
+### Experiments and evaluation
 
-To run current code, go to src and run
+- Run experiments from the repo root with `./run_experiments.sh`; it reads scenarios from `experiment.psv` and stores outputs under `src/output/`.
+- Evaluate aggregated results after an experiment run with:
 
 ```bash
-python3 -m mas_consensus.run
+python -m src.mas_consensus.evaluate --evaluation dynamic_MJA --model gemini-2.5-flash --graph_types chain circle complete star tree --agent_num 6 --attacker_num 0 --sample_ids 3 --aggregate_by_topology --datasets csqa
 ```
 
-See `docs/experiment_guide.md` for experiment runner details.
+- To evaluate files individually instead, use `./evaluate.sh`.
