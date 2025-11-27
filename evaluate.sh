@@ -1,7 +1,7 @@
 #!/bin/bash
 
 MODEL=gemini-2.5-flash
-DATASET=adv
+DATASET=csqa
 
 mkdir -p evaluation
 
