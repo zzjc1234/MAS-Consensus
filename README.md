@@ -31,16 +31,6 @@ Based on the paper: [Netsafe](https://anonymous.4open.science/r/NetSafe-B726/REA
     pre-commit install
     ```
 
-## Usage
-
-To run current code, go to src and run
-
-```bash
-python3 -m mas_consensus.run
-```
-
-See `docs/experiment_guide.md` for experiment runner details.
-
 ### Experiments and evaluation
 
 - Run experiments from the repo root with `./run_experiments.sh`; it reads scenarios from `experiment.psv` and stores outputs under `src/output/`.
