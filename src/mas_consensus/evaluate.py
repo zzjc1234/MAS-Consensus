@@ -14,19 +14,34 @@ from .evaluation import (
 )
 
 
-def evaluate(dataset_path, output_path, attacker_num, auditor_num, type):
+def evaluate(dataset_path, output_path, attacker_num, auditor_num=2, type="MJA"):
+    """
+    Main evaluation dispatcher that routes to appropriate dataset evaluator.
+    
+    Args:
+        dataset_path: Path to the dataset file
+        output_path: Path to the output file
+        attacker_num: Number of attackers
+        auditor_num: Number of auditors (default: 2, for backward compatibility)
+        type: Evaluation type - "SAA" or "MJA" (default: "MJA")
+    
+    Returns:
+        Evaluation accuracy/metrics
+    """
     if "csqa" in dataset_path:
         accuracy = evaluate_csqa(
             dataset_path, output_path, attacker_num, auditor_num, type
         )
-    if "fact" in dataset_path:
+    elif "fact" in dataset_path:
         accuracy = evaluate_fact(dataset_path, output_path, attacker_num, type)
-    if "bias" in dataset_path:
+    elif "bias" in dataset_path:
         accuracy = evaluate_bias(dataset_path, output_path, attacker_num, type)
-    if "gsm8k" in dataset_path:
+    elif "gsm8k" in dataset_path:
         accuracy = evaluate_gsm8k(dataset_path, output_path, attacker_num, type)
-    if "adv" in dataset_path:
+    elif "adv" in dataset_path:
         accuracy = evaluate_adv(output_path, attacker_num, type)
+    else:
+        raise ValueError(f"Unknown dataset type in path: {dataset_path}")
     return accuracy
 
 
