@@ -100,7 +100,7 @@ def generate_math_answer(input_path, output_path):
 
         response = (
             client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="openai/gpt-4o-mini",
                 messages=[{"role": "user", "content": error_task}],
                 temperature=0,
                 max_tokens=128,
@@ -136,7 +136,7 @@ def generate_math_error(input_path, output_path):
 
         response = (
             client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="openai/gpt-4o-mini",
                 messages=[{"role": "user", "content": error_task}],
                 temperature=0,
                 max_tokens=512,

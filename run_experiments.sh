@@ -130,7 +130,7 @@ tail -n +2 experiment3.psv | while IFS='|' read -r datasets graphs num_agents at
             fi
 
             # BASELINE: Honest agents only, no attacks, no auditors
-            if [[ "$type_one_attack" == "0" && "$type_two_attack" == "0" ]]; then
+            if [[ "$type_one_attack" == "0" && "$type_two_attack" == "0" && "$both_attacks" == "0" ]]; then
                 echo "======================================================================"
                 echo "BASELINE: dataset=$dataset, graph=$graph"
                 echo "  Agents: $num_agents (all honest)"
