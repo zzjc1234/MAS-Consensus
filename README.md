@@ -40,3 +40,14 @@ python3 -m mas_consensus.run
 ```
 
 See `docs/experiment_guide.md` for experiment runner details.
+
+### Experiments and evaluation
+
+- Run experiments from the repo root with `./run_experiments.sh`; it reads scenarios from `experiment.psv` and stores outputs under `src/output/`.
+- Evaluate aggregated results after an experiment run with:
+
+```bash
+python -m src.mas_consensus.evaluate --evaluation dynamic_MJA --model gemini-2.5-flash --graph_types chain circle complete star tree --agent_num 6 --attacker_num 0 --sample_ids 3 --aggregate_by_topology --datasets csqa
+```
+
+- To evaluate files individually instead, use `./evaluate.sh`.
