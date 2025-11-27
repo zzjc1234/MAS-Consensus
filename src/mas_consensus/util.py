@@ -7,6 +7,22 @@ from . import prompts
 from . import logging_config
 
 
+def _extract_correct_answer(data, ds_name):
+    """Extract the correct answer from dataset based on dataset type."""
+    if ds_name == "csqa":
+        return data.get("answerKey", "Unknown")
+    elif ds_name == "gsm8k":
+        return str(data.get("answer_number", "Unknown"))
+    elif ds_name == "fact":
+        return "True"
+    elif ds_name == "bias":
+        return "False"
+    elif ds_name == "adv":
+        return None  # No correct answer for adversarial prompts
+    else:
+        return "Unknown"
+
+
 def _process_item(
     data,
     ds_name,
@@ -28,6 +44,7 @@ def _process_item(
     log_dir,
 ):
     tasks, task_id = task_formatter(data, attacker_idx, num_agents)
+    correct_answer = _extract_correct_answer(data, ds_name)
 
     system_prompts = [
         attacker_system_prompt if i in attacker_idx else system_prompt
@@ -54,6 +71,7 @@ def _process_item(
         attacker_idx=attacker_idx,
         malicious_auditor_idx=malicious_auditor_idx,
         log_dir=task_log_dir,
+        correct_answer=correct_answer,
     )
     graph.run(turn)
     output_path = f"./src/output/{model}/{ds_name}/{sample_id}/{ds_name}_{mode}.output"

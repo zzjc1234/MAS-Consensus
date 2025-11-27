@@ -4,9 +4,71 @@ import numpy as np
 from openai import OpenAI
 
 
-def get_client(openai_api_key=os.environ["OPENAI_API_KEY"]):
-    client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=openai_api_key)
+def get_client(openai_api_key=None, model_type=None):
+    """
+    Get OpenRouter API client for all models.
+    
+    OpenRouter model list: https://openrouter.ai/models
+    """
+    # Use OpenRouter for all models
+    if openai_api_key is None:
+        openai_api_key = os.environ.get("OPENAI_API_KEY")
+    if not openai_api_key:
+        raise ValueError(
+            "OPENAI_API_KEY environment variable required for OpenRouter. "
+            "Get your key from: https://openrouter.ai/"
+        )
+    
+    client = OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=openai_api_key
+    )
+    
     return client
+
+
+def normalize_model_name(model_type):
+    """
+    Normalize model names to OpenRouter format.
+    
+    OpenRouter requires provider prefix (e.g., google/gemini-2.5-flash)
+    Check available models: https://openrouter.ai/models
+    """
+    # If already has provider prefix, return as-is
+    if "/" in model_type:
+        return model_type
+    
+    # Common model name mappings to OpenRouter format
+    # Note: Model availability on OpenRouter changes - verify at https://openrouter.ai/models
+    model_mappings = {
+        # Qwen models (OpenRouter format)
+        "qwen-max": "qwen/qwen-max",
+        "qwen-plus": "qwen/qwen-plus",
+        "qwen-turbo": "qwen/qwen-turbo",
+        
+        # Gemini models
+        "gemini-2.5-flash": "google/gemini-2.5-flash",
+        "gemini-2.0-flash": "google/gemini-2.0-flash", 
+        "gemini-flash": "google/gemini-flash-1.5",
+        "gemini-pro": "google/gemini-pro-1.5",
+        "gemini-1.5-flash": "google/gemini-flash-1.5",
+        "gemini-1.5-pro": "google/gemini-pro-1.5",
+        
+        # GPT models
+        "gpt-4o": "openai/gpt-4o",
+        "gpt-4o-mini": "openai/gpt-4o-mini",
+        "gpt-4-turbo": "openai/gpt-4-turbo",
+        "gpt-3.5-turbo": "openai/gpt-3.5-turbo",
+        
+        # Claude models
+        "claude-3-opus": "anthropic/claude-3-opus",
+        "claude-3-sonnet": "anthropic/claude-3-sonnet",
+        "claude-3-haiku": "anthropic/claude-3-haiku",
+        "claude-3.5-sonnet": "anthropic/claude-3.5-sonnet",
+    }
+    
+    # Return mapped name or original if not in mapping
+    return model_mappings.get(model_type, model_type)
 
 
 def create_directory(directory):

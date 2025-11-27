@@ -359,9 +359,9 @@ if __name__ == "__main__":
     # evaluation = "static_PV"
     sample_ids = [3]
     dataset = "adv"
-    model = "gpt-4o-mini"
+    model = "openai/gpt-4o-mini"
     if dataset == "adv":
-        model = "gpt-3.5-turbo"
+        model = "openai/gpt-3.5-turbo"
     graph_types = ["chain", "circle", "tree", "star", "complete"][-1:]
     agent_nums = [6]
     agent_num = 6
